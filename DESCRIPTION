@@ -1,0 +1,33 @@
+Package: scgft
+Type: Package
+Version: 1.0.0
+Date: 2024-06-01
+Authors@R: 
+    c(person("Nima", "Nouri", role=c("cre", "aut"), 
+      email="ni.nouri@gmail.com", comment=c(ORCID="0000-0001-8348-5717")))
+Title: single-cell RNA-seq data augmentation using generative Fourier transformers
+Description: scGFT (single-cell Generative Fourier Transformer), a methodical approach 
+    employing a one-shot transformation paradigm to synthesize single-cell gene 
+    expression profiles that reflect the natural biological variability found in 
+    authentic datasets.
+License: file LICENSE
+Copyrights: file COPYRIGHTS
+URL: https://github.com/Sanofi-Public/PMCB-scgft
+BugReports: https://github.com/Sanofi-Public/PMCB-scgft/issues
+BuildVignettes: true
+VignetteBuilder: knitr
+Suggests: knitr, rmarkdown, testthat (>= 3.0.0), BiocStyle,
+        Seurat (>= 4.1.1), SeuratObject
+Encoding: UTF-8
+biocViews: SingleCellSynthesis
+Depends: R (>= 4.2.0)
+Imports: dplyr (>= 1.0), Matrix, methods, rlang, stats, tibble, 
+         stringr, progress
+RoxygenNote: 7.2.3
+Collate:
+    'Core.R'
+    'scgft.R'
+NeedsCompilation: no
+Packaged: 2024-06-01 10:20:41 UTC; biocbuild
+Config/testthat/edition: 3
+LazyData: true
