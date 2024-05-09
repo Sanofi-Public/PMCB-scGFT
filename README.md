@@ -2,7 +2,7 @@
 [![Lifecycle](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://www.tidyverse.org/lifecycle/#stable)
 
 <p align="center" width="100%">
-<img width="30%" src="vignettes/scgft-logo.png"> 
+<img width="30%" src="vignettes/scgft-logsdco.png"> 
 </p>
 
 # scGFT 
