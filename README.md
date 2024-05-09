@@ -81,7 +81,8 @@ statsScGFT(object, groups)
 
 `statsScGFT` requires a Seurat object that includes synthesized cells (`object`)
 and the same character variable from the original object metadata used for
-synthesis (`groups`).
+synthesis (`groups`). It calculates the likelihood that synthesized cells will
+have the same identity as their original counterparts.
 
 </details>
 
@@ -109,12 +110,10 @@ To download this dataset please run:
 
 ```{r}
 # Enter commands in R (or R studio, if installed)
-# Define the URL of the data file
 data_url <- "https://zenodo.org/records/xxxxx/files/COPD-PRJEB44878.rds"
 # Define the path where you want to save the file (correct destination path
 including the filename)
 data_path <- "/path-to-destination/COPD-PRJEB44878.rds"
-# Use download.file() to download the data
 download.file(data_url, destfile = data_path, method = "auto")
 ```
 
@@ -147,6 +146,18 @@ sobj_synt <- CreateSeuratObject(counts=cnts,
   FindNeighbors(., reduction="harmony", dims=1:30,  k.param=20, verbose=TRUE) %>% # Find Neighbors
   FindClusters(., resolution=0.7, random.seed = 42, verbose=TRUE) %>% # Find clusters
   RunUMAP(., reduction="harmony", seed.use = 42, dims=1:30) # UMAP dimensionality reduction
+```
+
+#### Evaluate synthsized cells
+
+```{r}
+statsScGFT(object=sobj_synt, groups="seurat_clusters")
+```
+
+```text
+Synthesized cells: 34,200
+Matching groups: 33,890
+Accuracy (%): 99.09
 ```
 
 </details>

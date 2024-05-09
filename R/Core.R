@@ -123,7 +123,8 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
 
 
 #' @title synthesized cells QC
-#' @description   Evaluates the gene expression profile of synthesized cells.
+#' @description   Calculates the likelihood that synthesized cells will have the
+#'   same identity as their original counterparts.
 #'
 #' @param    object   A Seurat object that includes synthesized cells, i.e., an object post \link{RunScGFT}.
 #' @param    groups   Same character in the original \code{object} metadata used for synthesis by \link{RunScGFT}.
