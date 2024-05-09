@@ -2,7 +2,7 @@
 [![Lifecycle](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://www.tidyverse.org/lifecycle/#stable)
 
 <p align="center" width="100%">
-<img width="45%" src="vignettes/scgft_logo.png"> 
+<img width="42%" src="vignettes/scgft_logo.png"> 
 </p>
 
 # scGFT 
@@ -12,9 +12,12 @@ upon the principles of the Fourier Transform. It employs a one-shot
 transformation paradigm to synthesize single-cell gene expression profiles that
 reflect the natural biological variability found in authentic datasets.
 
-
+---
 
 ## Installation
+
+<details>
+<br>
 
 **scGFT** can be installed directly from this github with:
 
@@ -26,7 +29,14 @@ devtools::install_github("Sanofi-GitHub/PMCB-scGFT",
                          build_vignettes=FALSE)
 ```
 
+</details>
+
+---
+
 ## Usage
+
+<details>
+<br>
 
 scGFT framework is designed to be compatible with the Seurat R analysis pipelines. 
 To install, run:
@@ -38,3 +48,18 @@ library("Seurat")
 ```
 
 Visit [Seurat](https://satijalab.org/seurat/articles/install_v5) for more details.
+
+</details>
+
+---
+
+## Demo Workflow
+
+<details>
+<br>
+
+Text Text
+
+</details>
+
+---
