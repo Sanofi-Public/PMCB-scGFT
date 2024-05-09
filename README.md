@@ -14,6 +14,7 @@ reflect the natural biological variability found in authentic datasets.
 
 ---
 
+
 ## Installation
 
 <details>
@@ -33,18 +34,19 @@ devtools::install_github("Sanofi-GitHub/PMCB-scGFT",
 
 ---
 
-## Usage
+
+## Usage Requirements
 
 <details>
 <br>
 
 scGFT framework is designed to be compatible with the Seurat R analysis pipelines. 
-To install, run:
+To install, please run:
 
 ```{r}
 # Enter commands in R (or R studio, if installed)
 install.packages("Seurat")
-library("Seurat") 
+install.packages("SeuratObject")
 ```
 
 Visit [Seurat](https://satijalab.org/seurat/articles/install_v5) for more details.
@@ -53,12 +55,100 @@ Visit [Seurat](https://satijalab.org/seurat/articles/install_v5) for more detail
 
 ---
 
-## Demo Workflow
+
+## Functions Intro
 
 <details>
 <br>
 
-Text Text
+The scGFT package comprises only two functions: one to synthesize cells and a
+second to evaluate the synthesis quality.
+
+```r
+# to synthsize cells
+RunScGFT(object, nsynth, ncpmnts = 1, groups, scale.factor, cells = NULL)
+```
+
+`RunScGFT` requires, at a minimum, a Seurat object (`object`), the number of
+desired cells to be synthesized (`nsynth`), a metadata variable indicating
+groups of cells (`groups`), and the scale factor used for log-normalization of
+the original data (`scale.factor`).
+
+```r
+# to evaluate synthsized cells
+statsScGFT(object, groups)
+```
+
+`statsScGFT` requires a Seurat object that includes synthesized cells (`object`)
+and the same character variable from the original object metadata used for
+synthesis (`groups`).
+
+</details>
+
+---
+
+
+## Usage Demo 
+
+<details>
+<br>
+
+#### Get demo files
+
+We provided the dataset PRJEB44878 (Wohnhaas 2021), which comprises 34,200
+processed cells derived from primary small airway epithelial cells (SAECs) from
+both healthy individuals (n=3) and patients with chronic obstructive pulmonary
+disease (COPD) (n=3). These SAECs were subjected to in vitro expansion and
+differentiation into pseudostratified epithelia via air-liquid interface (ALI)
+conditions. To model smoke-induced injuries in the small airways of healthy
+non-smokers and COPD smokers, the fully differentiated SAEC ALI cultures
+underwent exposure to either whole cigarette smoke over a period of four
+consecutive days or to ambient air serving as the control.
+
+To download this dataset please run:
+
+```{r}
+# Enter commands in R (or R studio, if installed)
+# Define the URL of the data file
+data_url <- "https://zenodo.org/records/xxxxx/files/COPD-PRJEB44878.rds"
+# Define the path where you want to save the file
+# Correct destination path including the filename
+data_path <- "/path-to-destination/COPD-PRJEB44878.rds"
+# Use download.file() to download the data
+download.file(data_url, destfile = data_path, method = "auto")
+```
+
+#### Read data into R
+```{r}
+data_obj <- readRDS(file.path(data_path, "COPD-PRJEB44878.rds"))
+cnts <- data_obj$counts
+mtd <- data_obj$metadata
+```
+
+#### Perform Seurat standard pipeline including synthesis process
+```{r}
+sobj_synt <- CreateSeuratObject(counts=cnts,
+                                meta.data=mtd) %>% # create seurat object
+  NormalizeData(., normalization.method="LogNormalize", scale.factor=1e6) %>% # Normalize data
+  FindVariableFeatures(., nfeatures=2000) %>% # Find variable features
+  ScaleData(., do.scale=TRUE, do.center=TRUE) %>% # Scale the data
+  RunPCA(., seed.use = 42, verbose=FALSE) %>% # Perform PCA on the scaled data
+  RunHarmony(., reduction.use="pca", group.by.vars="sample") %>% # sample-specific batch correction
+  FindNeighbors(., reduction="harmony", dims=1:30, k.param=20, verbose=TRUE) %>% # Find Neighbors
+  FindClusters(., resolution=0.7, random.seed = 42, verbose=TRUE) %>% # Find clusters
+  # ================================
+  # synthesis 1x cells (34,200), through modification of 10 complex components.
+  RunScGFT(., nsynth=1*dim(.)[2], ncpmnts=10, groups="seurat_clusters", scale.factor=1e6) %>%
+  # ================================
+  # NormalizeData(., normalization.method="LogNormalize", scale.factor=1e6) %>% # Normalize data
+  FindVariableFeatures(., nfeatures=2000) %>% # Find variable features
+  ScaleData(., do.scale=TRUE, do.center=TRUE) %>% # Scale the data
+  RunPCA(., seed.use = 42, verbose=FALSE) %>% # Perform PCA on the scaled data
+  RunHarmony(., reduction.use="pca", group.by.vars=c("sample", "synthesized")) %>% # Batch correction
+  FindNeighbors(., reduction="harmony", dims=1:30,  k.param=20, verbose=TRUE) %>% # Find Neighbors
+  FindClusters(., resolution=0.7, random.seed = 42, verbose=TRUE) %>% # Find clusters
+  RunUMAP(., reduction="harmony", seed.use = 42, dims=1:30) # UMAP dimensionality reduction
+```
 
 </details>
 
