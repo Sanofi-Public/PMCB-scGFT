@@ -111,8 +111,8 @@ To download this dataset please run:
 # Enter commands in R (or R studio, if installed)
 # Define the URL of the data file
 data_url <- "https://zenodo.org/records/xxxxx/files/COPD-PRJEB44878.rds"
-# Define the path where you want to save the file
-# Correct destination path including the filename
+# Define the path where you want to save the file (correct destination path
+including the filename)
 data_path <- "/path-to-destination/COPD-PRJEB44878.rds"
 # Use download.file() to download the data
 download.file(data_url, destfile = data_path, method = "auto")
