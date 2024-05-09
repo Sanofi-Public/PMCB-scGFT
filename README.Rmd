@@ -1,54 +1,40 @@
----
-output: github_document
----
+[![Project Status](http://www.repostatus.org/badges/latest/active.svg)](http://www.repostatus.org/#active)
+[![Lifecycle](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://www.tidyverse.org/lifecycle/#stable)
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
+<p align="center" width="100%">
+<img width="30%" src="vignettes/scgft-logo.png"> 
+</p>
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/README-",
-  out.width = "100%"
-)
-```
+# scGFT 
 
-# scgft
+scGFT (single-cell Generative Fourier Transformer) is a generative model built
+upon the principles of the Fourier Transform. It employs a one-shot
+transformation paradigm to synthesize single-cell gene expression profiles that
+reflect the natural biological variability found in authentic datasets.
 
-<!-- badges: start -->
-<!-- badges: end -->
 
-The goal of scgft is to ...
 
 ## Installation
 
-You can install the development version of scgft like so:
+**scGFT** can be installed directly from this github with:
 
-``` r
-# FILL THIS IN! HOW CAN PEOPLE INSTALL YOUR DEV PACKAGE?
+```{r}
+if (!require("devtools", quietly = TRUE))
+  install.packages("devtools")
+
+devtools::install_github("Sanofi-GitHub/PMCB-scGFT", 
+                         build_vignettes=FALSE)
 ```
 
-## Example
+## Usage
 
-This is a basic example which shows you how to solve a common problem:
+scGFT framework is designed to be compatible with the Seurat R analysis pipelines. 
+To install, run:
 
-```{r example}
-library(scgft)
-## basic example code
+```{r}
+# Enter commands in R (or R studio, if installed)
+install.packages("Seurat")
+library("Seurat") 
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
-
-```{r cars}
-summary(cars)
-```
-
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this.
-
-You can also embed plots, for example:
-
-```{r pressure, echo = FALSE}
-plot(pressure)
-```
-
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.
+Visit [Seurat](https://satijalab.org/seurat/articles/install_v5) for more details.
