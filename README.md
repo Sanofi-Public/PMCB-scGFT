@@ -127,26 +127,26 @@ mtd <- data_obj$metadata
 #### Perform Seurat standard pipeline including synthesis process
 ```{r}
 sobj_synt <- CreateSeuratObject(counts=cnts,
-                                meta.data=mtd) %>% # create seurat object
-  NormalizeData(., normalization.method="LogNormalize", scale.factor=1e6) %>% # Normalize data
-  FindVariableFeatures(., nfeatures=2000) %>% # Find variable features
-  ScaleData(.) %>% # Scale the data
-  RunPCA(., seed.use = 42) %>% # Perform PCA on the scaled data
+                                meta.data=mtd) %>% 
+  NormalizeData(., normalization.method="LogNormalize", scale.factor=1e6) %>% 
+  FindVariableFeatures(., nfeatures=2000) %>% 
+  ScaleData(.) %>% 
+  RunPCA(., seed.use = 42) %>% 
   RunHarmony(., group.by.vars="sample") %>% # sample-specific batch correction
-  FindNeighbors(., reduction="harmony", dims=1:30) %>% # Find Neighbors
-  FindClusters(., random.seed = 42) %>% # Find clusters
+  FindNeighbors(., reduction="harmony", dims=1:30) %>% 
+  FindClusters(., random.seed = 42) %>%
   # ================================
   # synthesis 1x cells (34,200), through modification of 10 complex components.
   RunScGFT(., nsynth=1*dim(.)[2], ncpmnts=10, groups="seurat_clusters", scale.factor=1e6) %>%
   # ================================
   # The combined dataset of original and synthetic cells undergoes another round.
-  FindVariableFeatures(., nfeatures=2000) %>% # Find variable features
-  ScaleData(.) %>% # Scale the data
-  RunPCA(., seed.use = 42) %>% # Perform PCA on the scaled data
+  FindVariableFeatures(., nfeatures=2000) %>% 
+  ScaleData(.) %>% 
+  RunPCA(., seed.use = 42) %>% 
   RunHarmony(., group.by.vars=c("sample", "synthesized")) %>% # sample- and synthsis-specific batch correction
-  FindNeighbors(., reduction="harmony", dims=1:30) %>% # Find Neighbors
-  FindClusters(., random.seed = 42) %>% # Find clusters
-  RunUMAP(., reduction="harmony", seed.use = 42, dims=1:30) # UMAP dimensionality reduction
+  FindNeighbors(., reduction="harmony", dims=1:30) %>% 
+  FindClusters(., random.seed = 42) %>% 
+  RunUMAP(., reduction="harmony", seed.use = 42, dims=1:30) 
 ```
 
 #### Evaluate synthsized cells
