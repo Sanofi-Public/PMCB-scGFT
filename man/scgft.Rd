@@ -12,7 +12,8 @@ the principles of Fourier Transform, to generate synthetic scRNA-seq data in-sil
 
 \itemize{
   \item  \link{RunScGFT}:     Generates synthetic scRNA-seq data in-silico
-  \item  \link{statsScGFT}:   Evaluates the gene expression profile of synthesized cells.
+  \item  \link{statsScGFT}:   Calculates the likelihood that synthesized
+  cells will have the same identity as their original counterparts.
 }
 }
 

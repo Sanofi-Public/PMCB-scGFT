@@ -1,3 +1,9 @@
-^scgft\.Rproj$
+^.*\.Rproj$
 ^\.Rproj\.user$
-^README\.Rmd$
+^\.
+~$
+^test
+^data-raw
+^profil
+^Meta$
+^doc$

@@ -15,7 +15,8 @@ statsScGFT(object, groups)
 synthesis accuracy in percentage.
 }
 \description{
-Evaluates the gene expression profile of synthesized cells.
+Calculates the likelihood that synthesized cells will have the
+  same identity as their original counterparts.
 }
 \details{
 assesses the quality of the synthesis process by calculating the

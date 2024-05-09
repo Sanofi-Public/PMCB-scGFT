@@ -2,7 +2,7 @@
 [![Lifecycle](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://www.tidyverse.org/lifecycle/#stable)
 
 <p align="center" width="100%">
-<img width="42%" src="vignettes/scgft_logo.png"> 
+<img width="42%" src="inst/doc/scgft_logo.png"> 
 </p>
 
 # scGFT 
@@ -167,11 +167,11 @@ Utilizing UMAP for a qualitative evaluation, we project both synthesized and
 real cells onto the embedded manifold:
 
 <p align="center" width="100%">
-<img style="width: 70%; height: auto;" src="vignettes/panel_1_demo.png">
+<img style="width: 70%; height: auto;" src="inst/doc/panel_1_demo.png">
 </p>
 
 <p align="center" width="100%">
-<img style="width: 80%; height: auto;" src="vignettes/panel_2_demo.png">
+<img style="width: 80%; height: auto;" src="inst/doc/panel_2_demo.png">
 </p>
 
 We note that depending on the operating system used for calculations, the
