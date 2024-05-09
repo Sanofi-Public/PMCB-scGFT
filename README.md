@@ -163,6 +163,20 @@ Matching groups: 33,890
 Accuracy (%): 99.09
 ```
 
+Utilizing UMAP for a qualitative evaluation, we project both synthesized and
+real cells onto the embedded manifold:
+
+<p align="center" width="100%">
+<img width="42%" src="vignettes/panel_1_demo.png"> 
+</p>
+
+<p align="center" width="100%">
+<img width="42%" src="vignettes/panel_2_demo.png"> 
+</p>
+
+We note that depending on the operating system used for calculations, the
+results can be slightly different from the projected ones.
+
 </details>
 
 ---
