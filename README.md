@@ -99,12 +99,7 @@ have the same identity as their original counterparts.
 We provided the dataset PRJEB44878 (Wohnhaas 2021), which comprises 34,200
 processed cells derived from primary small airway epithelial cells (SAECs) from
 both healthy individuals (n=3) and patients with chronic obstructive pulmonary
-disease (COPD) (n=3). These SAECs were subjected to in vitro expansion and
-differentiation into pseudostratified epithelia via air-liquid interface (ALI)
-conditions. To model smoke-induced injuries in the small airways of healthy
-non-smokers and COPD smokers, the fully differentiated SAEC ALI cultures
-underwent exposure to either whole cigarette smoke over a period of four
-consecutive days or to ambient air serving as the control.
+disease (COPD) (n=3). 
 
 To download this dataset please run:
 
