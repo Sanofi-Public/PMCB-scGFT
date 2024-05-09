@@ -149,6 +149,8 @@ sobj_synt <- CreateSeuratObject(counts=cnts,
   RunUMAP(., reduction="harmony", seed.use = 42, dims=1:30) 
 ```
 
+Re-normalization is not necessary as the new cells are synthesized from already normalized data.
+
 #### Evaluate synthsized cells
 
 ```{r}
