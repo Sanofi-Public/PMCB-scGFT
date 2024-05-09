@@ -126,27 +126,28 @@ mtd <- data_obj$metadata
 
 #### Perform Seurat standard pipeline including synthesis process
 ```{r}
+set.seed(1234)
 sobj_synt <- CreateSeuratObject(counts=cnts,
-                                meta.data=mtd) %>% 
-  NormalizeData(., normalization.method="LogNormalize", scale.factor=1e6) %>% 
-  FindVariableFeatures(., nfeatures=2000) %>% 
-  ScaleData(.) %>% 
-  RunPCA(., seed.use = 42) %>% 
+                                meta.data=mtd) %>%
+  NormalizeData(., normalization.method="LogNormalize", scale.factor=1e4) %>%
+  FindVariableFeatures(., nfeatures=2000) %>%
+  ScaleData(.) %>%
+  RunPCA(., seed.use = 42) %>%
   RunHarmony(., group.by.vars="sample") %>% # sample-specific batch correction
-  FindNeighbors(., reduction="harmony", dims=1:30) %>% 
+  FindNeighbors(., reduction="harmony", dims=1:30) %>%
   FindClusters(., random.seed = 42) %>%
   # ================================
   # synthesis 1x cells (34,200), through modification of 10 complex components.
-  RunScGFT(., nsynth=1*dim(.)[2], ncpmnts=10, groups="seurat_clusters", scale.factor=1e6) %>%
+  RunScGFT(., nsynth=1*dim(.)[2], ncpmnts=10, groups="seurat_clusters", scale.factor=1e4) %>%
   # The combined dataset of original and synthetic cells undergoes another round.
   # ================================
-  FindVariableFeatures(., nfeatures=2000) %>% 
-  ScaleData(.) %>% 
-  RunPCA(., seed.use = 42) %>% 
+  FindVariableFeatures(., nfeatures=2000) %>%
+  ScaleData(.) %>%
+  RunPCA(., seed.use = 42) %>%
   RunHarmony(., group.by.vars=c("sample", "synthesized")) %>% # sample- and synthsis-specific batch correction
-  FindNeighbors(., reduction="harmony", dims=1:30) %>% 
-  FindClusters(., random.seed = 42) %>% 
-  RunUMAP(., reduction="harmony", seed.use = 42, dims=1:30) 
+  FindNeighbors(., reduction="harmony", dims=1:30) %>%
+  FindClusters(., random.seed = 42) %>%
+  RunUMAP(., reduction="harmony", seed.use = 42, dims=1:30)
 ```
 
 Re-normalization is not necessary as the new cells are synthesized from already normalized data.
@@ -157,21 +158,21 @@ Re-normalization is not necessary as the new cells are synthesized from already 
 statsScGFT(object=sobj_synt, groups="seurat_clusters")
 ```
 
-```text
+```{r}
 Synthesized cells: 34,200
-Matching groups: 33,890
-Accuracy (%): 99.09
+Matching groups: 34,026
+Accuracy (%): 99.49
 ```
 
 Utilizing UMAP for a qualitative evaluation, we project both synthesized and
 real cells onto the embedded manifold:
 
 <p align="center" width="100%">
-<img style="width: 70%; height: auto;" src="inst/doc/panel_1_demo.png">
+<img style="width: 65%; height: auto;" src="inst/doc/panel_1_demo.png">
 </p>
 
 <p align="center" width="100%">
-<img style="width: 80%; height: auto;" src="inst/doc/panel_2_demo.png">
+<img style="width: 85%; height: auto;" src="inst/doc/panel_2_demo.png">
 </p>
 
 We note that depending on the operating system used for calculations, the
