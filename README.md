@@ -140,11 +140,10 @@ sobj_synt <- CreateSeuratObject(counts=cnts,
   # synthesis 1x cells (34,200), through modification of 10 complex components.
   RunScGFT(., nsynth=1*dim(.)[2], ncpmnts=10, groups="seurat_clusters", scale.factor=1e6) %>%
   # ================================
-  # NormalizeData(., normalization.method="LogNormalize", scale.factor=1e6) %>% # Normalize data
   FindVariableFeatures(., nfeatures=2000) %>% # Find variable features
   ScaleData(., do.scale=TRUE, do.center=TRUE) %>% # Scale the data
   RunPCA(., seed.use = 42, verbose=FALSE) %>% # Perform PCA on the scaled data
-  RunHarmony(., reduction.use="pca", group.by.vars=c("sample", "synthesized")) %>% # Batch correction
+  RunHarmony(., reduction.use="pca", group.by.vars=c("sample", "synthesized")) %>% # sample- and synthsis-specific batch correction
   FindNeighbors(., reduction="harmony", dims=1:30,  k.param=20, verbose=TRUE) %>% # Find Neighbors
   FindClusters(., resolution=0.7, random.seed = 42, verbose=TRUE) %>% # Find clusters
   RunUMAP(., reduction="harmony", seed.use = 42, dims=1:30) # UMAP dimensionality reduction
