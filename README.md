@@ -119,7 +119,7 @@ download.file(data_url, destfile = data_path, method = "auto")
 
 #### Read data into R
 ```{r}
-data_obj <- readRDS(file.path(data_path, "COPD-PRJEB44878.rds"))
+data_obj <- readRDS(data_path)
 cnts <- data_obj$counts
 mtd <- data_obj$metadata
 ```
