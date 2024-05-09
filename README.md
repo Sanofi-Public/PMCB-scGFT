@@ -56,7 +56,7 @@ Visit [Seurat](https://satijalab.org/seurat/articles/install_v5) for more detail
 ---
 
 
-## Functions Intro
+## Functions Introduction
 
 <details>
 <br>
@@ -89,7 +89,7 @@ have the same identity as their original counterparts.
 ---
 
 
-## Usage Demo 
+## Use Case 
 
 <details>
 <br>
