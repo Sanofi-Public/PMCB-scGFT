@@ -167,11 +167,11 @@ Utilizing UMAP for a qualitative evaluation, we project both synthesized and
 real cells onto the embedded manifold:
 
 <p align="center" width="100%">
-<img width="70%" src="vignettes/panel_1_demo.png"> 
+<img style="width: 70%; height: auto;" src="vignettes/panel_1_demo.png">
 </p>
 
 <p align="center" width="100%">
-<img width="80%" src="vignettes/panel_2_demo.png"> 
+<img style="width: 80%; height: auto;" src="vignettes/panel_2_demo.png">
 </p>
 
 We note that depending on the operating system used for calculations, the
