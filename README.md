@@ -130,7 +130,7 @@ sobj_synt <- CreateSeuratObject(counts=cnts,
   RunPCA(., seed.use=42) %>%
   RunHarmony(., group.by.vars="sample") %>% # sample-specific batch correction
   FindNeighbors(., reduction="harmony", dims=1:30) %>%
-  FindClusters(., random.seed = 42) %>%
+  FindClusters(., random.seed=42) %>%
   # ================================
   # synthesis 1x cells (34,200), through modification of 10 complex components.
   RunScGFT(., nsynth=1*dim(.)[2], ncpmnts=10, groups="seurat_clusters", scale.factor=1e4) %>%
