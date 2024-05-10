@@ -99,9 +99,7 @@ have the same identity (belong to same `groups`) as their original counterparts.
 We provided the dataset PRJEB44878 (Wohnhaas 2021), which comprises 34,200
 processed cells derived from primary small airway epithelial cells (SAECs) from
 both healthy individuals (n=3) and patients with chronic obstructive pulmonary
-disease (COPD) (n=3).
-
-To download this dataset please run:
+disease (COPD) (n=3). To download this dataset please run:
 
 ```{r}
 # Enter commands in R (or R studio, if installed)
