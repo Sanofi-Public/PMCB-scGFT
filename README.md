@@ -215,3 +215,15 @@ results can be slightly different from the projected ones.
 </details>
 
 ---
+
+
+## Contact
+
+<details>
+<br>
+
+For help and questions please contact the [scgft's maintenance team](mailto:nima.nouri@sanofi.com).
+
+</details>
+
+---
