@@ -148,6 +148,7 @@ sobj_synt <- CreateSeuratObject(counts=cnts,
   RunUMAP(., reduction="harmony", seed.use = 42, dims=1:30)
 ```
 
+`RunScGFT` console outputs:
 
 ```{r}
 Discrete fourier transform...
