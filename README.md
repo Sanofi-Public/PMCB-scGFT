@@ -135,7 +135,7 @@ sobj_synt <- CreateSeuratObject(counts=cnts,
   # synthesis 1x cells (34,200), through modification of 10 complex components.
   RunScGFT(., nsynth=1*dim(.)[2], ncpmnts=10, groups="seurat_clusters", scale.factor=1e4) %>%
   # The combined dataset of original and synthetic cells undergoes another round.
-  Re-normalization is not necessary as the new cells are synthesized from already normalized data.
+  # Re-normalization is not necessary as the new cells are synthesized from already normalized data.
   # ================================
   FindVariableFeatures(., nfeatures=2000) %>%
   ScaleData(.) %>%
