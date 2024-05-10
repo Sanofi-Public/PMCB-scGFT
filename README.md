@@ -127,7 +127,7 @@ sobj_synt <- CreateSeuratObject(counts=cnts,
   NormalizeData(., normalization.method="LogNormalize", scale.factor=1e4) %>%
   FindVariableFeatures(., nfeatures=2000) %>%
   ScaleData(.) %>%
-  RunPCA(., seed.use = 42) %>%
+  RunPCA(., seed.use=42) %>%
   RunHarmony(., group.by.vars="sample") %>% # sample-specific batch correction
   FindNeighbors(., reduction="harmony", dims=1:30) %>%
   FindClusters(., random.seed = 42) %>%
@@ -139,11 +139,11 @@ sobj_synt <- CreateSeuratObject(counts=cnts,
   # ================================
   FindVariableFeatures(., nfeatures=2000) %>%
   ScaleData(.) %>%
-  RunPCA(., seed.use = 42) %>%
+  RunPCA(., seed.use=42) %>%
   RunHarmony(., group.by.vars=c("sample", "synthesized")) %>% # sample- and synthsis-specific batch correction
   FindNeighbors(., reduction="harmony", dims=1:30) %>%
-  FindClusters(., random.seed = 42) %>%
-  RunUMAP(., reduction="harmony", seed.use = 42, dims=1:30)
+  FindClusters(., random.seed=42) %>%
+  RunUMAP(., reduction="harmony", seed.use=42, dims=1:30)
 ```
 
 `RunScGFT` console outputs:
