@@ -156,19 +156,18 @@ statsScGFT <- function(object, groups) {
   }
   # ===================================
   vars <- c("barcode", groups, "orig_cell", "synthesized")
+  # ===================================
   stats_df <- object@meta.data %>%
     tibble::rownames_to_column(var = "barcode") %>%
     dplyr::mutate(orig_cell = sub("_synth.*$", "", barcode))
   # ===================================
-  originals <- stats_df %>%
+  originals <- stats_df[, colnames(stats_df) %in% vars] %>%
     dplyr::filter(synthesized == "no") %>%
-    dplyr::select(all_of(vars)) %>%
     dplyr::rename(original_barcode = barcode,
                   original_id = groups)
   # ===================================
-  synths <- stats_df %>%
+  synths <- stats_df[, colnames(stats_df) %in% vars] %>%
     dplyr::filter(synthesized == "yes") %>%
-    dplyr::select(all_of(vars)) %>%
     dplyr::rename(synthesized_barcode = barcode,
                   synthesized_id = groups)
   # ===================================
@@ -181,6 +180,9 @@ statsScGFT <- function(object, groups) {
   message(paste("Synthesized cells:", format(results_stats$total_cells, big.mark=",")))
   message(paste("Matching groups:", format(results_stats$matching_clusters, big.mark=",")))
   message(paste("Accuracy (%):", round(results_stats$accuracy_percentage, 2)))
+  # ===================================
+  message("Calculating deviation from originals...")
+  DevScGFT(object)
   # ===================================
 }
 
@@ -436,3 +438,52 @@ convert_list_to_matrix <- function(cell_list) {
   colnames(mat) <- unique_cell_names
   return(mat)
 }
+
+
+
+# calculate the deviation from the originals
+DevScGFT <- function(object) {
+  # ===================================
+  suppressWarnings({
+    cells_synt <- colnames(object)[stringr::str_which(colnames(object), paste0("_synth"))]
+    syn_mtx <- as.matrix(Seurat::GetAssayData(subset(object, cells=cells_synt), assay="RNA", layer="data"))
+  })
+  # ===================================
+  suppressWarnings({
+    cells_orig <- setdiff(colnames(object), cells_synt)
+    orig_mtx <- as.matrix(Seurat::GetAssayData(subset(object, cells=cells_orig), assay="RNA", layer="data"))
+  })
+  # ===================================
+  # print(dim(synts))
+  # print(dim(origs))
+  # ===================================
+  # get the data
+  stopifnot(all(rownames(orig_mtx) == rownames(syn_mtx)))
+  # ===================================
+  # get the synthesized cells names
+  synt_cells_nm <- FetchSynthesizedCells(syn_mtx)
+  originalCells <- names(synt_cells_nm)
+  stopifnot(length(originalCells) == length(unique(originalCells)))
+  # ===================================
+  # Initialize progress bar
+  nl <- length(originalCells)
+  pb <- initialize_bar(totbar=nl, wdth=66)
+  # ===================================
+  # Loop through each original cell to compute mean deviation
+  dev_mtx <- sapply(originalCells, function(x){
+    pb$tick() # Update progress bar
+    # Calculate relative changes for each gene. Compute the row means of changes, ignoring NA values
+    mean(rowMeans(apply(syn_mtx[, synt_cells_nm[[x]], drop=FALSE], 2, function(y) RelativeChange(orig_mtx[, x, drop=FALSE], y)), na.rm=TRUE))
+  })
+  # ===================================
+  message(paste("Deviation (%):", round(mean(dev_mtx)*100, 2), "+/-", round(sd(dev_mtx)*100, 2)))
+  # ===================================
+}
+
+
+# Function to safely calculate relative changes to avoid division by zero
+RelativeChange <- function(orig, synth) {
+  change <- (synth - orig) / ifelse(orig == 0, 1, orig)
+  return(change)
+}
+

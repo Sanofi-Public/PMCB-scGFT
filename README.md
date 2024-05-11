@@ -106,7 +106,7 @@ disease. To download this dataset please run:
 data_url <- "https://zenodo.org/records/11166226/files/COPD-PRJEB44878.rds"
 # Define the path where you want to save the file (correct destination path
 including the filename)
-data_path <- "/path-to-destination/COPD-PRJEB44878.rds"
+data_path <- "~/COPD-PRJEB44878.rds"
 download.file(data_url, destfile = data_path, method = "auto")
 ```
 
@@ -194,6 +194,10 @@ statsScGFT(object=sobj_synt, groups="seurat_clusters")
 Synthesized cells: 34,200
 Matching groups: 34,026
 Accuracy (%): 99.49
+Calculating deviation from originals...
+  [==================================================] 100% in  3m
+  [==================================================] 100% in  1m
+Deviation (%): 0.13 +/- 0.03
 ```
 
 Utilizing UMAP for a qualitative evaluation, we project synthesized and
