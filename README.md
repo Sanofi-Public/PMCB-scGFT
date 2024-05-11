@@ -192,6 +192,8 @@ A Seurat object with 68,400 cells, including 34,200 synthesized.
 statsScGFT(object=sobj_synt, groups="seurat_clusters")
 ```
 
+`statsScGFT` console outputs:
+
 ```{r}
 Synthesized cells: 34,200
 Matching groups: 34,026
