@@ -83,6 +83,8 @@ statsScGFT(object, groups)
 and the same character variable from the original object metadata used for
 synthesis (`groups`). It calculates the likelihood that synthesized cells will
 have the same identity (belong to same `groups`) as their original counterparts.
+It also reports the relative deviation of synthesized gene expression profiles from
+original cells.
 
 </details>
 
