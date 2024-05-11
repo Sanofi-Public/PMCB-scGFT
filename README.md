@@ -97,8 +97,8 @@ have the same identity (belong to same `groups`) as their original counterparts.
 #### Get demo files
 
 We provided the dataset PRJEB44878 (Wohnhaas 2021), which comprises 34,200
-processed cells derived from primary small airway epithelial cells from
-both healthy individuals and patients with chronic obstructive pulmonary
+processed cells derived from primary small airway epithelial cells from 
+healthy individuals and patients with chronic obstructive pulmonary
 disease. To download this dataset please run:
 
 ```{r}
@@ -196,7 +196,7 @@ Matching groups: 34,026
 Accuracy (%): 99.49
 ```
 
-Utilizing UMAP for a qualitative evaluation, we project both synthesized and
+Utilizing UMAP for a qualitative evaluation, we project synthesized and
 real cells onto the embedded manifold:
 
 <p align="center" width="100%">
