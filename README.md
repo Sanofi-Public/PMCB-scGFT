@@ -207,7 +207,7 @@ real cells onto the embedded manifold:
 <img style="width: 85%; height: auto;" src="inst/doc/panel_2_demo.png">
 </p>
 
-We note that depending on the operating system used for calculations, the
+Depending on the operating system used for calculations, the
 results can be slightly different from the projected ones.
 
 </details>
