@@ -106,10 +106,8 @@ disease. To download this dataset please run:
 ```{r}
 # Enter commands in R (or R studio, if installed)
 data_url <- "https://zenodo.org/records/11166226/files/COPD-PRJEB44878.rds"
-# Define the path where you want to save the file (correct destination path
-including the filename)
-data_path <- "~/COPD-PRJEB44878.rds"
-download.file(data_url, destfile = data_path, method = "auto")
+data_path <- "~/COPD-PRJEB44878.rds" # correct destination path included the filename
+download.file(url=data_url, destfile=data_path, method="auto")
 ```
 
 
