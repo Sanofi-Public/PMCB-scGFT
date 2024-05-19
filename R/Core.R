@@ -16,7 +16,6 @@
 #'                             for synthesis to capture distinct variation modes
 #'                             in each cell population, such as cell types or clusters.
 #'                             All groups are uniformly scaled for desired expansion.
-#' @param    scale.factor      The scale factor used for natural-log transformation.
 #' @param    cells             An optional argument specifying the subset of cells
 #'                             to be used for synthesis.
 #'
@@ -33,7 +32,7 @@
 #'
 #' @export
 RunScGFT <- function(object, nsynth, ncpmnts=1,
-                     groups, scale.factor, cells=NULL) {
+                     groups, cells=NULL) {
   # =======================================
   # Check if Seurat package is installed
   if (!requireNamespace('Seurat', quietly = TRUE)) {
@@ -47,6 +46,11 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
   if (!all(c("counts", "data") %in% names(object$RNA@layers))) {
     stop("Layers for counts or data does not exist. Please run Seurat::NormalizeData() first.")
   }
+    # Check if Seurat object contains variable features
+  if (object@commands[["NormalizeData.RNA"]]$normalization.method != "LogNormalize") {
+    stop("Seurat object should be 'LogNormalize'. Please use `LogNormalize` for 'normalization.method'.")
+  }
+  scl_fctr <- object@commands[["NormalizeData.RNA"]]$scale.factor
   # Check if Seurat object contains variable features
   if (is.null(Seurat::VariableFeatures(object))) {
     stop("Seurat object does not contain variable features. Please run Seurat::FindVariableFeatures() first.")
@@ -103,7 +107,7 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
   sobj_synt <- SobjMerger(cnt_ls = list(orig_dta, as(syn_mtx_full, "dgCMatrix")),
                           mtd_ls = list(object@meta.data, metadata_synt))
   sobj_synt@assays$RNA$data <- sobj_synt@assays$RNA$counts
-  sobj_synt@assays$RNA$counts <- GetCountMatrix(sobj_synt, orig_cnt, genes, synt_cells_nm, syn_mtx_full, scale.factor)
+  sobj_synt@assays$RNA$counts <- GetCountMatrix(sobj_synt, orig_cnt, genes, synt_cells_nm, syn_mtx_full, scl_fctr)
   Seurat::VariableFeatures(sobj_synt) <- varftrs
   # ===================================
   ids <- grepl("_synth", rownames(sobj_synt@meta.data))

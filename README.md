@@ -66,13 +66,12 @@ second to evaluate the synthesis quality.
 
 ```r
 # to synthsize cells
-RunScGFT(object, nsynth, ncpmnts = 1, groups, scale.factor, cells = NULL)
+RunScGFT(object, nsynth, ncpmnts = 1, groups, cells = NULL)
 ```
 
 `RunScGFT` requires, at a minimum, a Seurat object (`object`), the number of
-desired cells to be synthesized (`nsynth`), a metadata variable indicating
-groups of cells (`groups`), and the scale factor used for log-normalization of
-the original data (`scale.factor`).
+desired cells to be synthesized (`nsynth`), and a metadata variable indicating
+groups of cells (`groups`).
 
 ```r
 # to evaluate synthsized cells
@@ -124,7 +123,7 @@ mtd <- data_obj$metadata
 set.seed(1234)
 sobj_synt <- CreateSeuratObject(counts=cnts,
                                 meta.data=mtd) %>%
-  NormalizeData(., normalization.method="LogNormalize", scale.factor=1e4) %>%
+  NormalizeData(., normalization.method="LogNormalize") %>%
   FindVariableFeatures(., nfeatures=2000) %>%
   ScaleData(.) %>%
   RunPCA(., seed.use=42) %>%
@@ -133,7 +132,7 @@ sobj_synt <- CreateSeuratObject(counts=cnts,
   FindClusters(., random.seed=42) %>%
   # ================================
   # synthesis 1x cells (34,200), through modification of 10 complex components.
-  RunScGFT(., nsynth=1*dim(.)[2], ncpmnts=10, groups="seurat_clusters", scale.factor=1e4) %>%
+  RunScGFT(., nsynth=1*dim(.)[2], ncpmnts=10, groups="seurat_clusters") %>%
   # The combined dataset of original and synthetic cells undergoes another round. 
   # Re-normalization is not needed as the new cells are synthesized from already normalized data.
   # ================================

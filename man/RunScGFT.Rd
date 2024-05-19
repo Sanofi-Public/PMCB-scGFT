@@ -4,7 +4,7 @@
 \alias{RunScGFT}
 \title{Generates synthetic scRNA-seq data in-silico}
 \usage{
-RunScGFT(object, nsynth, ncpmnts = 1, groups, scale.factor, cells = NULL)
+RunScGFT(object, nsynth, ncpmnts = 1, groups, cells = NULL)
 }
 \arguments{
 \item{object}{A seurat object.}
@@ -18,8 +18,6 @@ synthesis process.}
 for synthesis to capture distinct variation modes
 in each cell population, such as cell types or clusters.
 All groups are uniformly scaled for desired expansion.}
-
-\item{scale.factor}{The scale factor used for natural-log transformation.}
 
 \item{cells}{An optional argument specifying the subset of cells
 to be used for synthesis.}
