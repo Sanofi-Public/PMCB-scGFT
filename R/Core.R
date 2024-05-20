@@ -279,7 +279,7 @@ PerformDIFT <- function(cnt_mtx, groups, nsynth, ncpmnts=1) {
   # set.seed(12345)
   synthMatrix_ls <- list()
   cell_cnt <- 0
-  for (groupID in names(nPerGroup)) {
+  for (groupID in names(sort(nPerGroup, decreasing=T))) {
     # get cells in the group
     cellsInGroup <- cellNames[groups == groupID]
     # decide modification function
