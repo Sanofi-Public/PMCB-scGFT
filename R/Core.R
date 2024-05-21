@@ -65,8 +65,12 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
     stop(paste0("'ncpmnts' (", ncpmnts, ") cannot be larger than number of variable features (", nvf, ")."))
   }
   # =======================================
-  orig_cnt <- Seurat::GetAssayData(object, assay="RNA", layer="counts")
-  orig_dta <- Seurat::GetAssayData(object, assay="RNA", layer="data")
+  suppressWarnings({
+    orig_cnt <- as.matrix(Seurat::GetAssayData(object, assay="RNA", layer="counts"))
+    })
+  suppressWarnings({
+    orig_dta <- as.matrix(Seurat::GetAssayData(object, assay="RNA", layer="data"))
+    })
   # =======================================
   grps <- as.character(object@meta.data[[groups]])
   genes <- rownames(object)
@@ -75,15 +79,11 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
   # =======================================
   if (!is.null(cells)) {
     var_mtx <- orig_dta[varftrs, cells, drop=FALSE]
-    suppressWarnings({
-      invar_mtx <- as.matrix(orig_dta[invarftrs, cells, drop=FALSE])
-    })
+    invar_mtx <- orig_dta[invarftrs, cells, drop=FALSE]
     grps <- rep(1, length(cells))
   } else {
     var_mtx <- orig_dta[varftrs, ]
-    suppressWarnings({
-      invar_mtx <- as.matrix(orig_dta[invarftrs, ])
-    })
+    invar_mtx <- orig_dta[invarftrs, ]
   }
   # =======================================
   start_time <- Sys.time()
@@ -104,10 +104,10 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
   metadata_synt <- ExtendMetaData(object, syn_mtx_full)
   # ===================================
   message(paste("Integrating data (4/4)"))
-  sobj_synt <- SobjMerger(cnt_ls = list(orig_dta, as(syn_mtx_full, "dgCMatrix")),
+  sobj_synt <- SobjMerger(cnt_ls = list(as(orig_dta, "dgCMatrix"), as(syn_mtx_full, "dgCMatrix")),
                           mtd_ls = list(object@meta.data, metadata_synt))
   sobj_synt@assays$RNA$data <- sobj_synt@assays$RNA$counts
-  sobj_synt@assays$RNA$counts <- GetCountMatrix(sobj_synt, orig_cnt, genes, synt_cells_nm, syn_mtx_full, scl_fctr)
+  sobj_synt@assays$RNA$counts <- GetCountMatrix(sobj_synt, orig_cnt, orig_dta, genes, synt_cells_nm, syn_mtx_full, scl_fctr)
   Seurat::VariableFeatures(sobj_synt) <- varftrs
   # ===================================
   ids <- grepl("_synth", rownames(sobj_synt@meta.data))
@@ -326,7 +326,7 @@ PerformDIFT <- function(cnt_mtx, groups, nsynth, ncpmnts=1) {
 
 
 # Generated the raw count matrix by reversing log-transformed data
-GetCountMatrix <- function(sobj_synt, orig_cnt, genes, synt_cells_nm, syn_mtx_full, scl_fctr) {
+GetCountMatrix <- function(sobj_synt, orig_cnt, orig_dta, genes, synt_cells_nm, syn_mtx_full, scl_fctr) {
   # ===================================
   cnt_full <- matrix(NA, nrow=length(genes), ncol=ncol(sobj_synt))
   rownames(cnt_full) <- genes
@@ -334,7 +334,7 @@ GetCountMatrix <- function(sobj_synt, orig_cnt, genes, synt_cells_nm, syn_mtx_fu
   # ===================================
   indcs <- match(colnames(orig_cnt), colnames(cnt_full))
   suppressWarnings({
-    cnt_full[, indcs] <- as.matrix(orig_cnt)
+    cnt_full[, indcs] <- orig_cnt
   })
   # ===================================
   # Initialize progress bar
@@ -342,11 +342,17 @@ GetCountMatrix <- function(sobj_synt, orig_cnt, genes, synt_cells_nm, syn_mtx_fu
   pb <- initialize_bar(totbar=nl, wdth=66)
   # ===================================
   # Add count matrix to the full synth matrix, ensuring correct cell name alignment
-  orig_tot_umi <- colSums(orig_cnt)/scl_fctr # Obtain original cell's total UMI count for normalization
+  # orig_tot_umi <- colSums(orig_cnt)/scl_fctr # Obtain original cell's total UMI count for normalization
+  # for (x in names(synt_cells_nm)) {
+  #   pb$tick() # Update progress bar
+  #   y <- synt_cells_nm[[x]]
+  #   cnt_full[, y] <- expm1(syn_mtx_full[, y]) * orig_tot_umi[x]
+  # }
   for (x in names(synt_cells_nm)) {
     pb$tick() # Update progress bar
-    y <- synt_cells_nm[[x]]
-    cnt_full[, y] <- expm1(syn_mtx_full[, y]) * orig_tot_umi[x]
+    cls <- synt_cells_nm[[x]]
+    devs <- apply(syn_mtx_full[, cls, drop=FALSE], 2, function(y) RelativeChange(orig_dta[, x, drop=FALSE], y))
+    cnt_full[, cls] <- apply(devs, 2, function(y) revRelativeChange(orig_cnt[, x, drop=FALSE], y))
   }
   stopifnot(sum(is.na(cnt_full)) == 0) # Validate the assignments
   # ===================================
@@ -486,8 +492,12 @@ DevScGFT <- function(object) {
 
 
 # Function to safely calculate relative changes to avoid division by zero
-RelativeChange <- function(orig, synth) {
-  change <- (synth - orig) / ifelse(orig == 0, 1, orig)
+RelativeChange <- function(a, b) {
+  change <- (b - a) / ifelse(a == 0, 1, a)
   return(change)
 }
 
+# Function to safely calculate relative changes to avoid division by zero
+revRelativeChange <- function(a, b) {
+  return(a+b*a)
+}

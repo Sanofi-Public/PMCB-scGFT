@@ -172,15 +172,15 @@ synthesizing 34,200 cells...
 34,057 cells synthesized...
 34,150 cells synthesized...
 34,200 cells synthesized...
-Synthesis completed in: 2.52 min
+Synthesis completed in: 2.57 min
 Integrating data (1/4)
-  [==================================================] 100% in  3m
+  [==================================================] 100% in  4m
 Integrating data (2/4)
-  [==================================================] 100% in 38s
+  [==================================================] 100% in 43s
 Integrating data (3/4)
   [==================================================] 100% in  1m
 Integrating data (4/4)
-  [==================================================] 100% in  1m
+  [==================================================] 100% in  2m
 A Seurat object with 68,400 cells, including 34,200 synthesized.
 ```
 
@@ -195,11 +195,11 @@ statsScGFT(object=sobj_synt, groups="seurat_clusters")
 
 ```{r}
 Synthesized cells: 34,200
-Matching groups: 33,923
-Accuracy (%): 99.19
+Matching groups: 33,906
+Accuracy (%): 99.14
 Calculating deviation from originals...
   [==================================================] 100% in  3m
-  [==================================================] 100% in  1m
+  [==================================================] 100% in  2m
 Deviation (%): 0.44 +/- 0.08
 ```
 
