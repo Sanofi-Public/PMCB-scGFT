@@ -25,7 +25,7 @@ to be used for synthesis.}
 \value{
 Returns a combined \code{object} of original and synthetic cells. The
   synthesized cells are integrated into the \code{data} layer, while their
-  reversed log-transformed counts are integrated into the \code{counts} layer.
+  adjusted counts are integrated into the \code{counts} layer.
   The synthesized cells are labeled by the cell barcodes they originated
   from, suffixed with "_synth". A new \code{synthesized} column is added to
   metadata indicating the synthesis status of each cell, labeled as either

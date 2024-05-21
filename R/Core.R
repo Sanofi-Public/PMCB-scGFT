@@ -21,7 +21,7 @@
 #'
 #' @return Returns a combined \code{object} of original and synthetic cells. The
 #'   synthesized cells are integrated into the \code{data} layer, while their
-#'   reversed log-transformed counts are integrated into the \code{counts} layer.
+#'   adjusted counts are integrated into the \code{counts} layer.
 #'   The synthesized cells are labeled by the cell barcodes they originated
 #'   from, suffixed with "_synth". A new \code{synthesized} column is added to
 #'   metadata indicating the synthesis status of each cell, labeled as either
@@ -50,7 +50,7 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
   if (object@commands[["NormalizeData.RNA"]]$normalization.method != "LogNormalize") {
     stop("Seurat object should be 'LogNormalize'. Please use `LogNormalize` for 'normalization.method'.")
   }
-  scl_fctr <- object@commands[["NormalizeData.RNA"]]$scale.factor
+  # scl_fctr <- object@commands[["NormalizeData.RNA"]]$scale.factor
   # Check if Seurat object contains variable features
   if (is.null(Seurat::VariableFeatures(object))) {
     stop("Seurat object does not contain variable features. Please run Seurat::FindVariableFeatures() first.")
@@ -107,7 +107,7 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
   sobj_synt <- SobjMerger(cnt_ls = list(as(orig_dta, "dgCMatrix"), as(syn_mtx_full, "dgCMatrix")),
                           mtd_ls = list(object@meta.data, metadata_synt))
   sobj_synt@assays$RNA$data <- sobj_synt@assays$RNA$counts
-  sobj_synt@assays$RNA$counts <- GetCountMatrix(sobj_synt, orig_cnt, orig_dta, genes, synt_cells_nm, syn_mtx_full, scl_fctr)
+  sobj_synt@assays$RNA$counts <- GetCountMatrix(sobj_synt, orig_cnt, orig_dta, synt_cells_nm, syn_mtx_full)
   Seurat::VariableFeatures(sobj_synt) <- varftrs
   # ===================================
   ids <- grepl("_synth", rownames(sobj_synt@meta.data))
@@ -326,16 +326,14 @@ PerformDIFT <- function(cnt_mtx, groups, nsynth, ncpmnts=1) {
 
 
 # Generated the raw count matrix by reversing log-transformed data
-GetCountMatrix <- function(sobj_synt, orig_cnt, orig_dta, genes, synt_cells_nm, syn_mtx_full, scl_fctr) {
+GetCountMatrix <- function(sobj_synt, orig_cnt, orig_dta, synt_cells_nm, syn_mtx_full) {
   # ===================================
-  cnt_full <- matrix(NA, nrow=length(genes), ncol=ncol(sobj_synt))
-  rownames(cnt_full) <- genes
+  cnt_full <- matrix(NA, nrow=nrow(sobj_synt), ncol=ncol(sobj_synt))
+  rownames(cnt_full) <- rownames(sobj_synt)
   colnames(cnt_full) <- colnames(sobj_synt)
   # ===================================
   indcs <- match(colnames(orig_cnt), colnames(cnt_full))
-  suppressWarnings({
-    cnt_full[, indcs] <- orig_cnt
-  })
+  cnt_full[, indcs] <- orig_cnt
   # ===================================
   # Initialize progress bar
   nl <- length(synt_cells_nm)
@@ -355,6 +353,7 @@ GetCountMatrix <- function(sobj_synt, orig_cnt, orig_dta, genes, synt_cells_nm, 
     cnt_full[, cls] <- apply(devs, 2, function(y) revRelativeChange(orig_cnt[, x, drop=FALSE], y))
   }
   stopifnot(sum(is.na(cnt_full)) == 0) # Validate the assignments
+  stopifnot(sum(cnt_full < 0) == 0) # Validate the assignments
   # ===================================
   cnt_full <- as(cnt_full, "dgCMatrix")
   return(cnt_full)
