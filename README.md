@@ -231,9 +231,9 @@ sobj_synt <- CreateSeuratObject(counts=cnts,
   FindVariableFeatures(., nfeatures=2000) %>%
   # ================================
   # synthesis 1,000, through modification of 10 complex components, for each of given annotated rare epithelial subtypes
-  RunScGFT(., nsynth=1000, ncpmnts=10, cells = "S2_ACGGAGAGTTCCCGAG-1") %>% # pre-annotated "Ionocyte" cell
-  RunScGFT(., nsynth=1000, ncpmnts=10, cells = "S1_ATTACTCTCGTTGCCT-1") %>% # pre-annotated"Pnec" cell
-  RunScGFT(., nsynth=1000, ncpmnts=10, cells = "S1_AAGCCGCGTGCCTGCA-1") %>% # pre-annotated "Aberrant_basaloid" cell
+  RunScGFT(., nsynth=1000, ncpmnts=10, cells = "S2_ACGGAGAGTTCCCGAG-1") %>% # a pre-annotated "Ionocyte" cell
+  RunScGFT(., nsynth=1000, ncpmnts=10, cells = "S1_ATTACTCTCGTTGCCT-1") %>% # a pre-annotated "Pnec" cell
+  RunScGFT(., nsynth=1000, ncpmnts=10, cells = "S1_AAGCCGCGTGCCTGCA-1") %>% # a pre-annotated "Aberrant_basaloid" cell
   # ================================
   FindVariableFeatures(., nfeatures=2000) %>%
   ScaleData(.) %>%
