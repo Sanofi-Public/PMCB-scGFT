@@ -1,7 +1,7 @@
 library("sargent")
 library("readxl")
 
-# Use 'cellstatePipe' function below to annotate cells using sargent
+# Use 'cellstatePipe' function below to annotate cells using sargent.
 # sobj should contain a 'count' layer as well as 'RNA_nn' attribute.
 sobj <- cellstatePipe(geneset_path, sobj)
 
