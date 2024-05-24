@@ -32,32 +32,41 @@
 #'
 #' @export
 RunScGFT <- function(object, nsynth, ncpmnts=1,
-                     groups, cells=NULL) {
+                     groups=NULL, cells=NULL) {
   # =======================================
   # Check if Seurat package is installed
   if (!requireNamespace('Seurat', quietly = TRUE)) {
-    stop("Running scGFT on a Seurat object requires Seurat.")
+    stop("Running scGFT on a Seurat object requires 'Seurat'.")
+  }
+  if (!requireNamespace('SeuratObject', quietly = TRUE)) {
+    stop("Running scGFT on a Seurat object requires 'SeuratObject'.")
   }
   # Check if Seurat object contains RNA assay
   if (!"RNA" %in% Seurat::Assays(object)) {
     stop("Seurat object does not contain RNA assay.")
   }
   # Check if Seurat object contains RNA assay with layers for counts and data
-  if (!all(c("counts", "data") %in% names(object$RNA@layers))) {
+  if (!all(c("counts", "data") %in% SeuratObject::Layers(object, assay="RNA"))) {
     stop("Layers for counts or data does not exist. Please run Seurat::NormalizeData() first.")
   }
     # Check if Seurat object contains variable features
-  if (object@commands[["NormalizeData.RNA"]]$normalization.method != "LogNormalize") {
-    stop("Seurat object should be 'LogNormalize'. Please use `LogNormalize` for 'normalization.method'.")
-  }
+  # if (object@commands[["NormalizeData.RNA"]]$normalization.method != "LogNormalize") {
+  #   stop("Seurat object should be 'LogNormalize'. Please use `LogNormalize` for 'normalization.method'.")
+  # }
   # scl_fctr <- object@commands[["NormalizeData.RNA"]]$scale.factor
   # Check if Seurat object contains variable features
   if (is.null(Seurat::VariableFeatures(object))) {
     stop("Seurat object does not contain variable features. Please run Seurat::FindVariableFeatures() first.")
   }
   # check if 'groups' exist in the metadata
-  if (!groups %in% names(object@meta.data)) {
-    stop(paste0("'", groups, "' does not exist in the object metadata."))
+  if (is.null(cells) & is.null(groups)) {
+    stop(paste("One of 'groups' or 'cells'", "should be assigned."))
+  }
+  # check if 'groups' exist in the metadata
+  if (is.null(cells) & !is.null(groups)) {
+    if (!groups %in% names(object@meta.data)) {
+      stop(paste0("'", groups, "' does not exist in the object metadata."))
+    }
   }
   # check ncpmnts and number of variable features
   nvf <- length(Seurat::VariableFeatures(object))
@@ -72,7 +81,6 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
     orig_dta <- as.matrix(Seurat::GetAssayData(object, assay="RNA", layer="data"))
     })
   # =======================================
-  grps <- as.character(object@meta.data[[groups]])
   genes <- rownames(object)
   varftrs <- Seurat::VariableFeatures(object)
   invarftrs <- setdiff(genes, varftrs)
@@ -84,10 +92,13 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
   } else {
     var_mtx <- orig_dta[varftrs, ]
     invar_mtx <- orig_dta[invarftrs, ]
+    grps <- as.character(object@meta.data[[groups]])
   }
   # =======================================
+  adj_mtx <- attr(object, which="graphs")[["RNA_nn"]]
+  # =======================================
   start_time <- Sys.time()
-  syn_mtx <- PerformDIFT(cnt_mtx=var_mtx, groups=grps, nsynth=nsynth, ncpmnts=ncpmnts)
+  syn_mtx <- PerformDIFT(cnt_mtx=var_mtx, groups=grps, nsynth=nsynth, ncpmnts=ncpmnts, adj_mtx=adj_mtx)
   end_time <- Sys.time()
   dt <- as.numeric(difftime(end_time, start_time, units = "secs"))
   message(paste("Synthesis completed in:", round(dt/60, 2), "min"))
@@ -228,6 +239,7 @@ ModificationGroup <- function(ft_mtx, cmpnts, cellsInGroup) {
   ampltds <- abs(ft_mtx[cmpnts, cellsInGroup, drop = FALSE])
   ampltds <- apply(ampltds, 1, function(x) x/sqrt(sum(x^2)))
   mdfs <- apply(ampltds, 2, function(x) rnorm(1, mean=2, sd=sd(x))) # the previous line flips the dimensions
+  # stopifnot(sum(is.na(mdfs)) == 0)
   return(mdfs)
 }
 
@@ -240,7 +252,7 @@ ModificationSingle <- function(cmpnts) {
 
 
 # Performs Discrete and INverse Fourier Transforms
-PerformDIFT <- function(cnt_mtx, groups, nsynth, ncpmnts=1) {
+PerformDIFT <- function(cnt_mtx, groups, nsynth, ncpmnts=1, adj_mtx) {
   # Extracting components from the input object
   geneNames <- rownames(cnt_mtx)
   cellNames <- colnames(cnt_mtx)
@@ -290,6 +302,7 @@ PerformDIFT <- function(cnt_mtx, groups, nsynth, ncpmnts=1) {
     }
     # Randomly select a cell from the group
     n_synt <- nPerGroup[names(nPerGroup) == groupID]
+    # selectedCells <- sampleCells(n_synt, cells=cellsInGroup)
     selectedCells <- sample(cellsInGroup, n_synt, replace=TRUE)
     synthMatrix <- lapply(selectedCells, function(x){
       # get the selected cell FT
@@ -306,6 +319,13 @@ PerformDIFT <- function(cnt_mtx, groups, nsynth, ncpmnts=1) {
       modifiedFT[conjugateComps] <- modifiedFT[conjugateComps] * modFactors[boolid]
       # Perform IFT to synthesize a new cell
       syn_cell <- Re(fft(modifiedFT, inverse=TRUE) / len_ft)
+      # Find the indices of the neighbors. Combine the synthesized cell, its original
+      # counterpart, and its neighbors. Calculate the average expression per gene.
+      nibrs <- intersect(names(which(adj_mtx[x, ] > 0)), cellsInGroup)
+      # if (length(nibrs) > 0) {
+      syn_cell <- rowMeans(cbind(syn_cell, cnt_mtx[, nibrs, drop=FALSE]))
+      # }
+      # syn_cell <- rowMeans(cbind(syn_cell, cnt_mtx[, x]))
       # syn_cell <- syn_cell * (originalUMICount[x] / sum(syn_cell)) # Scale UMI counts
       return(syn_cell)
     })
@@ -318,7 +338,8 @@ PerformDIFT <- function(cnt_mtx, groups, nsynth, ncpmnts=1) {
   stopifnot(unique(lengths(synthMatrix_ls)) == length(geneNames))
   synthMatrix <- convert_list_to_matrix(synthMatrix_ls)
   rownames(synthMatrix) <- geneNames
-  synthMatrix[synthMatrix < 0] <- 0 # Apply ReLU
+  synthMatrix[synthMatrix < 1e-6] <- 0 # Apply ReLU
+  # synthMatrix <- round(synthMatrix, 3)
   syn_mtx <- as(synthMatrix, "dgCMatrix")
   # =======================================
   return(syn_mtx)
@@ -499,4 +520,20 @@ RelativeChange <- function(a, b) {
 # Function to safely calculate relative changes to avoid division by zero
 revRelativeChange <- function(a, b) {
   return(a+b*a)
+}
+
+
+# Calculate number of times each cell should be sampled
+sampleCells <- function(n_synt, cells) {
+  N <- length(cells)
+  if (n_synt > N) {
+    rsdl <- n_synt %% N  # Residual counts for characters
+    smpls <- rep(cells, times = floor(n_synt / N))
+    if (rsdl > 0) { # Add residual counts
+      smpls <- c(smpls, sample(cells, size=rsdl, replace=FALSE))
+    }
+  } else {
+    smpls <- sample(cells, size=n_synt, replace=FALSE)
+  }
+  return(smpls)
 }

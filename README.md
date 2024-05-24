@@ -139,7 +139,7 @@ sobj_synt <- CreateSeuratObject(counts=cnts,
   FindVariableFeatures(., nfeatures=2000) %>%
   ScaleData(.) %>%
   RunPCA(., seed.use=42) %>%
-  RunHarmony(., group.by.vars=c("sample", "synthesized")) %>% # sample- and synthsis-specific batch correction
+  RunHarmony(., group.by.vars="sample") %>% # sample-specific batch correction
   FindNeighbors(., reduction="harmony", dims=1:30) %>%
   FindClusters(., random.seed=42) %>%
   RunUMAP(., reduction="harmony", seed.use=42, dims=1:30)
@@ -172,11 +172,11 @@ synthesizing 34,200 cells...
 34,057 cells synthesized...
 34,150 cells synthesized...
 34,200 cells synthesized...
-Synthesis completed in: 2.57 min
+Synthesis completed in: 5.18 min
 Integrating data (1/4)
-  [==================================================] 100% in  4m
+  [==================================================] 100% in  3m
 Integrating data (2/4)
-  [==================================================] 100% in 43s
+  [==================================================] 100% in 37s
 Integrating data (3/4)
   [==================================================] 100% in  1m
 Integrating data (4/4)
@@ -195,12 +195,12 @@ statsScGFT(object=sobj_synt, groups="seurat_clusters")
 
 ```{r}
 Synthesized cells: 34,200
-Matching groups: 33,906
-Accuracy (%): 99.14
+Matching groups: 31,585
+Accuracy (%): 92.35
 Calculating deviation from originals...
   [==================================================] 100% in  3m
-  [==================================================] 100% in  2m
-Deviation (%): 0.44 +/- 0.08
+  [==================================================] 100% in  1m
+Deviation (%): 1.55 +/- 0.38
 ```
 
 Utilizing UMAP for a qualitative evaluation, we project synthesized and
@@ -216,6 +216,65 @@ real cells onto the embedded manifold:
 
 Depending on the operating system used for calculations, the
 results can be slightly different from the projected ones.
+
+#### Perform cell-based synthesis:
+
+In this showcase, we expand rare epithelial subtypes, including aberrant
+basaloid cells, PNECs, and ionocytes, each comprising less than 0.3% of the
+population:
+
+```{r}
+set.seed(1234)
+sobj_synt <- CreateSeuratObject(counts=cnts,
+                                meta.data=mtd) %>%
+  NormalizeData(., normalization.method="LogNormalize", scale.factor=1e6) %>%
+  FindVariableFeatures(., nfeatures=2000) %>%
+  # ================================
+  # synthesis 1,000, through modification of 10 complex components, for each of given annotated rare epithelial subtypes
+  RunScGFT(., nsynth=1000, ncpmnts=10, cells = "S2_ACGGAGAGTTCCCGAG-1") %>% # "Ionocyte" pre-annotated cell
+  RunScGFT(., nsynth=1000, ncpmnts=10, cells = "S1_ATTACTCTCGTTGCCT-1") %>% # "Pnec" pre-annotated cell
+  RunScGFT(., nsynth=1000, ncpmnts=10, cells = "S1_AAGCCGCGTGCCTGCA-1") %>% # "Aberrant_basaloid" pre-annotated cell
+  # ================================
+  FindVariableFeatures(., nfeatures=2000) %>%
+  ScaleData(.) %>%
+  RunPCA(., seed.use=42) %>%
+  RunHarmony(., group.by.vars=c("sample")) %>% # sample- and synthsis-specific batch correction
+  FindNeighbors(., reduction="harmony", dims=1:30) %>%
+  FindClusters(., random.seed=42) %>%
+  RunUMAP(., reduction="harmony", seed.use=42, dims=1:30)
+```
+
+
+#### Evaluate synthsized cells
+
+Next, we evaluate the consistency of cell types in synthesized cells relative to
+the originals. Cells goes through another round of cell type annotation using
+Sargent (link), an automated, cluster-free, score-based annotation method that
+classifies cell types based on distinct gene expression markers (link). Then, the
+annotations of the synthesized cells are evaluated by:
+
+```{r}
+statsScGFT(object=sobj_synt, groups="sargent_celltype")
+```
+
+`statsScGFT` console outputs:
+
+```{r}
+Synthesized cells: 3,000
+Matching groups: 2,998
+Accuracy (%): 99.93
+Calculating deviation from originals...
+  [==================================================] 100% in  3s
+Deviation (%): 0.62 +/- 0.02
+```
+
+Utilizing UMAP for a qualitative evaluation, we project synthesized and
+real cells onto the embedded manifold:
+
+<p align="center" width="100%">
+<img style="width: 65%; height: auto;" src="inst/doc/panel_3_demo.png">
+</p>
+
 
 </details>
 
