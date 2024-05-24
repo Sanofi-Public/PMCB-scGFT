@@ -71,7 +71,7 @@ RunScGFT(object, nsynth, ncpmnts = 1, groups = NULL, cells = NULL)
 
 `RunScGFT` requires, at a minimum, a Seurat object (`object`), the number of
 desired cells to be synthesized (`nsynth`), and a metadata variable indicating
-groups of cells (`groups`). Assigne `cells` for cell-specific synthesis.
+groups of cells (`groups`). Assign `cells` for cell-specific synthesis.
 
 ```r
 # to evaluate synthsized cells
