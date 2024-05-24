@@ -195,8 +195,8 @@ statsScGFT(object=sobj_synt, groups="seurat_clusters")
 
 ```{r}
 Synthesized cells: 34,200
-Matching groups: 31,585
-Accuracy (%): 92.35
+Matching groups: 33,585
+Accuracy (%): 98.2
 Calculating deviation from originals...
   [==================================================] 100% in  3m
   [==================================================] 100% in  1m
@@ -215,7 +215,7 @@ real cells onto the embedded manifold:
 </p>
 
 Depending on the operating system used for calculations, the
-results can be slightly different from the projected ones.
+results can be different from the projected ones.
 
 #### Perform cell-based synthesis:
 
@@ -238,7 +238,7 @@ sobj_synt <- CreateSeuratObject(counts=cnts,
   FindVariableFeatures(., nfeatures=2000) %>%
   ScaleData(.) %>%
   RunPCA(., seed.use=42) %>%
-  RunHarmony(., group.by.vars=c("sample")) %>% # sample- and synthsis-specific batch correction
+  RunHarmony(., group.by.vars=c("sample")) %>% # sample-specific batch correction
   FindNeighbors(., reduction="harmony", dims=1:30) %>%
   FindClusters(., random.seed=42) %>%
   RunUMAP(., reduction="harmony", seed.use=42, dims=1:30)
@@ -249,9 +249,10 @@ sobj_synt <- CreateSeuratObject(counts=cnts,
 
 Next, we evaluate the consistency of cell types in synthesized cells relative to
 the originals. Cells goes through another round of cell type annotation using
-Sargent (link), an automated, cluster-free, score-based annotation method that
-classifies cell types based on distinct gene expression markers (link). Then, the
-annotations of the synthesized cells are evaluated by:
+[Sargent](https://github.com/Sanofi-Public/PMCB-Sargent), an automated, 
+cluster-free, score-based annotation method that classifies cell types based on
+distinct gene expression [markers](inst/doc/epithelial_subtypes_markers.xlsx). 
+Then, the annotations of the synthesized cells are evaluated by:
 
 ```{r}
 statsScGFT(object=sobj_synt, groups="sargent_celltype")
@@ -274,6 +275,9 @@ real cells onto the embedded manifold:
 <p align="center" width="100%">
 <img style="width: 65%; height: auto;" src="inst/doc/panel_3_demo.png">
 </p>
+
+Depending on the operating system used for calculations, the
+results can be different from the projected ones.
 
 
 </details>
