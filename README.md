@@ -71,7 +71,8 @@ RunScGFT(object, nsynth, ncpmnts = 1, groups = NULL, cells = NULL)
 
 `RunScGFT` requires, at a minimum, a Seurat object (`object`), the number of
 desired cells to be synthesized (`nsynth`), and a metadata variable indicating
-groups of cells (`groups`). Assign `cells` for cell-specific synthesis.
+groups of cells (`groups`). Assign cell barcode(s) to `cells` for cell-specific 
+synthesis.
 
 ```r
 # to evaluate synthsized cells
@@ -172,14 +173,10 @@ synthesizing 34,200 cells...
 34,057 cells synthesized...
 34,150 cells synthesized...
 34,200 cells synthesized...
-Synthesis completed in: 5.18 min
-Integrating data (1/4)
-  [==================================================] 100% in  3m
-Integrating data (2/4)
-  [==================================================] 100% in 37s
-Integrating data (3/4)
-  [==================================================] 100% in  1m
-Integrating data (4/4)
+Synthesis completed in: 5.07 min
+Integrating data (1/2)
+  [==================================================] 100% in 42s
+Integrating data (2/2)
   [==================================================] 100% in  2m
 A Seurat object with 68,400 cells, including 34,200 synthesized.
 ```
@@ -198,7 +195,6 @@ Synthesized cells: 34,200
 Matching groups: 33,585
 Accuracy (%): 98.2
 Calculating deviation from originals...
-  [==================================================] 100% in  3m
   [==================================================] 100% in  1m
 Deviation (%): 1.55 +/- 0.38
 ```
@@ -266,7 +262,7 @@ Synthesized cells: 3,000
 Matching groups: 2,998
 Accuracy (%): 99.93
 Calculating deviation from originals...
-  [==================================================] 100% in  3s
+  [==================================================] 100% in  2s
 Deviation (%): 0.62 +/- 0.02
 ```
 

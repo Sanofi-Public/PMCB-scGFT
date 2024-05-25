@@ -13,11 +13,10 @@
 #' @param    ncpmnts           The number of components to modify during the
 #'                             synthesis process.
 #' @param    groups            A character in the original \code{object} metadata used
-#'                             for synthesis to capture distinct variation modes
-#'                             in each cell population, such as cell types or clusters.
+#'                             for group-based synthesis (such as cell types or clusters).
 #'                             All groups are uniformly scaled for desired expansion.
-#' @param    cells             An optional argument specifying the subset of cells
-#'                             to be used for synthesis.
+#' @param    cells             Specifies cell(s) barcode to be used for cell-based
+#'                             synthesis. \code{nsynth} cells will be synthesized.
 #'
 #' @return Returns a combined \code{object} of original and synthetic cells. The
 #'   synthesized cells are integrated into the \code{data} layer, while their
@@ -103,18 +102,15 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
   dt <- as.numeric(difftime(end_time, start_time, units = "secs"))
   message(paste("Synthesis completed in:", round(dt/60, 2), "min"))
   # ===================================
-  message(paste("Integrating data (1/4)"))
   # get the synthesized cells names
-  synt_cells_nm <- FetchSynthesizedCells(syn_mtx)
+  synt_cells_nm <- FetchSynthesizedCells(colnames(syn_mtx))
   # ===================================
-  message(paste("Integrating data (2/4)"))
+  message(paste("Integrating data (1/2)"))
   # extend to integrated matrix
   syn_mtx_full <- ExtendSynthesizedMatrix(syn_mtx, genes, invar_mtx, invarftrs, synt_cells_nm)
+  metadata_synt <- ExtendMetaData(object@meta.data, syn_mtx_full)
   # ===================================
-  message(paste("Integrating data (3/4)"))
-  metadata_synt <- ExtendMetaData(object, syn_mtx_full)
-  # ===================================
-  message(paste("Integrating data (4/4)"))
+  message(paste("Integrating data (2/2)"))
   sobj_synt <- SobjMerger(cnt_ls = list(as(orig_dta, "dgCMatrix"), as(syn_mtx_full, "dgCMatrix")),
                           mtd_ls = list(object@meta.data, metadata_synt))
   sobj_synt@assays$RNA$data <- sobj_synt@assays$RNA$counts
@@ -322,9 +318,7 @@ PerformDIFT <- function(cnt_mtx, groups, nsynth, ncpmnts=1, adj_mtx) {
       # Find the indices of the neighbors. Combine the synthesized cell, its original
       # counterpart, and its neighbors. Calculate the average expression per gene.
       nibrs <- intersect(names(which(adj_mtx[x, ] > 0)), cellsInGroup)
-      # if (length(nibrs) > 0) {
       syn_cell <- rowMeans(cbind(syn_cell, cnt_mtx[, nibrs, drop=FALSE]))
-      # }
       # syn_cell <- rowMeans(cbind(syn_cell, cnt_mtx[, x]))
       # syn_cell <- syn_cell * (originalUMICount[x] / sum(syn_cell)) # Scale UMI counts
       return(syn_cell)
@@ -367,11 +361,20 @@ GetCountMatrix <- function(sobj_synt, orig_cnt, orig_dta, synt_cells_nm, syn_mtx
   #   y <- synt_cells_nm[[x]]
   #   cnt_full[, y] <- expm1(syn_mtx_full[, y]) * orig_tot_umi[x]
   # }
+  lents <- lengths(synt_cells_nm)
   for (x in names(synt_cells_nm)) {
     pb$tick() # Update progress bar
+    # cls <- synt_cells_nm[[x]]
+    # devs <- apply(syn_mtx_full[, cls, drop=FALSE], 2, function(y) RelativeChange(orig_dta[, x, drop=FALSE], y))
+    # cnt_full[, cls] <- apply(devs, 2, function(y) revRelativeChange(orig_cnt[, x, drop=FALSE], y))
+
     cls <- synt_cells_nm[[x]]
-    devs <- apply(syn_mtx_full[, cls, drop=FALSE], 2, function(y) RelativeChange(orig_dta[, x, drop=FALSE], y))
-    cnt_full[, cls] <- apply(devs, 2, function(y) revRelativeChange(orig_cnt[, x, drop=FALSE], y))
+    denom <- y <- replicate(lents[x], orig_dta[, x])
+    denom[denom == 0] <- 1
+    devs <- (syn_mtx_full[, cls, drop=FALSE] - y)/denom
+
+    y <- replicate(lents[x], orig_cnt[, x])
+    cnt_full[, cls] <- y + devs*y
   }
   stopifnot(sum(is.na(cnt_full)) == 0) # Validate the assignments
   stopifnot(sum(cnt_full < 0) == 0) # Validate the assignments
@@ -400,10 +403,10 @@ ExtendSynthesizedMatrix <- function(syn_mtx, genes, invar_mtx, invarftrs, synt_c
   # ===================================
   # Add invariant genes data to the synthetic matrix, ensuring correct cell name alignment
   indcs <- match(invarftrs, rownames(data_full))
+  lents <- lengths(synt_cells_nm)
   for (x in names(synt_cells_nm)) {
     pb$tick() # Update progress bar
-    y <- synt_cells_nm[[x]]
-    data_full[indcs, y] <- replicate(length(y), invar_mtx[, x])
+    data_full[indcs, synt_cells_nm[[x]]] <- replicate(lents[x], invar_mtx[, x])
   }
   stopifnot(sum(is.na(data_full)) == 0) # Validate the assignments
   # ===================================
@@ -412,48 +415,33 @@ ExtendSynthesizedMatrix <- function(syn_mtx, genes, invar_mtx, invarftrs, synt_c
 
 
 # Generates a list of synthesized cell barcodes and their original counterparts
-FetchSynthesizedCells <- function(mtx) {
-  syntCells <- colnames(mtx)
-  originalCells <- unique(sub("_synth.*$", "", syntCells))
-  # ===================================
-  # Initialize progress bar
-  nl <- length(originalCells)
-  pb <- initialize_bar(totbar=nl, wdth=66)
-  # ===================================
-  synt_cells_nm <- vector(mode="list", length=nl)
-  for (i in 1:nl) {
-    pb$tick() # Update progress bar
-    synt_cells_nm[[i]] <- syntCells[str_which(syntCells, paste0("^",originalCells[i],"_synth"))]
-  }
-  names(synt_cells_nm) <- originalCells
-  return(synt_cells_nm)
+FetchSynthesizedCells <- function(synt_cells) {
+  return(split(synt_cells, gsub("_synth.*$", "", synt_cells)))
 }
 
 
 # Extend the original cells metadata to the integrated object
-ExtendMetaData <- function(sobj, mtx){
-  mtd <- sobj@meta.data
+ExtendMetaData <- function(mtd, mtx){
   mtd[] <- lapply(mtd, function(x) if (is.factor(x)) as.character(x) else x)
-  col_names <- colnames(mtd)
-  cols <- vector("list", length = length(col_names))
-  names(cols) <- col_names
   # ===================================
-  for (i in seq_along(cols)) {
-    cols[[i]] <- vector(length=ncol(mtx))
-  }
-  # ===================================
-  metadata_synt <- as.data.frame(cols)
-  rownames(metadata_synt) <- colnames(mtx)
+  # mtd_synt <- replicate(ncol(mtd), vector(length=ncol(mtx)), simplify = FALSE)
+  # names(mtd_synt) <- colnames(mtd)
+  # mtd_synt <- as.data.frame(mtd_synt)
+  # rownames(mtd_synt) <- colnames(mtx)
   # ===================================
   # Initialize progress bar
-  nl <- ncol(mtx)
-  pb <- initialize_bar(totbar=nl, wdth=66)
+  # nl <- ncol(mtx)
+  # pb <- initialize_bar(totbar=nl, wdth=66)
   # ===================================
-  for (x in colnames(mtx)) {
-    pb$tick() # Update progress bar
-    metadata_synt[x, ] <- mtd[sub("_synth.*$", "", x), ]
-  }
-  return(metadata_synt)
+  # for (x in colnames(mtx)) {
+  #   pb$tick() # Update progress bar
+  #   mtd_synt[x, ] <- mtd[sub("_synth.*$", "", x), ]
+  # }
+
+  # Subset the original dataframe based on non-synthetic column names
+  mtd_synt <- mtd[sub("_synth.*$", "", colnames(mtx)), ]
+  rownames(mtd_synt) <- colnames(mtx)
+  return(mtd_synt)
 }
 
 
@@ -491,22 +479,26 @@ DevScGFT <- function(object) {
   stopifnot(all(rownames(orig_mtx) == rownames(syn_mtx)))
   # ===================================
   # get the synthesized cells names
-  synt_cells_nm <- FetchSynthesizedCells(syn_mtx)
+  synt_cells_nm <- FetchSynthesizedCells(colnames(syn_mtx))
   originalCells <- names(synt_cells_nm)
   stopifnot(length(originalCells) == length(unique(originalCells)))
   # ===================================
   # Initialize progress bar
   nl <- length(originalCells)
   pb <- initialize_bar(totbar=nl, wdth=66)
+  lents <- lengths(synt_cells_nm)
   # ===================================
   # Loop through each original cell to compute mean deviation
-  dev_mtx <- sapply(originalCells, function(x){
+  devs <- sapply(originalCells, function(x){
     pb$tick() # Update progress bar
     # Calculate relative changes for each gene. Compute the row means of changes, ignoring NA values
-    mean(rowMeans(apply(syn_mtx[, synt_cells_nm[[x]], drop=FALSE], 2, function(y) RelativeChange(orig_mtx[, x, drop=FALSE], y)), na.rm=TRUE))
+    # mean(rowMeans(apply(syn_mtx[, synt_cells_nm[[x]], drop=FALSE], 2, function(y) RelativeChange(orig_mtx[, x, drop=FALSE], y)), na.rm=TRUE))
+    denom <- y <- replicate(lents[x], orig_mtx[, x])
+    denom[denom == 0] <- 1
+    mean(rowMeans((syn_mtx[, synt_cells_nm[[x]], drop=FALSE] - y) / denom))
   })
   # ===================================
-  message(paste("Deviation (%):", round(mean(dev_mtx)*100, 2), "+/-", round(sd(dev_mtx)*100, 2)))
+  message(paste("Deviation (%):", round(mean(devs)*100, 2), "+/-", round(sd(devs)*100, 2)))
   # ===================================
 }
 
