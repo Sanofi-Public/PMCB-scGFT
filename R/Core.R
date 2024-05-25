@@ -355,24 +355,13 @@ GetCountMatrix <- function(sobj_synt, orig_cnt, orig_dta, synt_cells_nm, syn_mtx
   pb <- initialize_bar(totbar=nl, wdth=66)
   # ===================================
   # Add count matrix to the full synth matrix, ensuring correct cell name alignment
-  # orig_tot_umi <- colSums(orig_cnt)/scl_fctr # Obtain original cell's total UMI count for normalization
-  # for (x in names(synt_cells_nm)) {
-  #   pb$tick() # Update progress bar
-  #   y <- synt_cells_nm[[x]]
-  #   cnt_full[, y] <- expm1(syn_mtx_full[, y]) * orig_tot_umi[x]
-  # }
   lents <- lengths(synt_cells_nm)
   for (x in names(synt_cells_nm)) {
     pb$tick() # Update progress bar
-    # cls <- synt_cells_nm[[x]]
-    # devs <- apply(syn_mtx_full[, cls, drop=FALSE], 2, function(y) RelativeChange(orig_dta[, x, drop=FALSE], y))
-    # cnt_full[, cls] <- apply(devs, 2, function(y) revRelativeChange(orig_cnt[, x, drop=FALSE], y))
-
     cls <- synt_cells_nm[[x]]
     denom <- y <- replicate(lents[x], orig_dta[, x])
     denom[denom == 0] <- 1
     devs <- (syn_mtx_full[, cls, drop=FALSE] - y)/denom
-
     y <- replicate(lents[x], orig_cnt[, x])
     cnt_full[, cls] <- y + devs*y
   }
@@ -424,20 +413,6 @@ FetchSynthesizedCells <- function(synt_cells) {
 ExtendMetaData <- function(mtd, mtx){
   mtd[] <- lapply(mtd, function(x) if (is.factor(x)) as.character(x) else x)
   # ===================================
-  # mtd_synt <- replicate(ncol(mtd), vector(length=ncol(mtx)), simplify = FALSE)
-  # names(mtd_synt) <- colnames(mtd)
-  # mtd_synt <- as.data.frame(mtd_synt)
-  # rownames(mtd_synt) <- colnames(mtx)
-  # ===================================
-  # Initialize progress bar
-  # nl <- ncol(mtx)
-  # pb <- initialize_bar(totbar=nl, wdth=66)
-  # ===================================
-  # for (x in colnames(mtx)) {
-  #   pb$tick() # Update progress bar
-  #   mtd_synt[x, ] <- mtd[sub("_synth.*$", "", x), ]
-  # }
-
   # Subset the original dataframe based on non-synthetic column names
   mtd_synt <- mtd[sub("_synth.*$", "", colnames(mtx)), ]
   rownames(mtd_synt) <- colnames(mtx)
@@ -492,7 +467,6 @@ DevScGFT <- function(object) {
   devs <- sapply(originalCells, function(x){
     pb$tick() # Update progress bar
     # Calculate relative changes for each gene. Compute the row means of changes, ignoring NA values
-    # mean(rowMeans(apply(syn_mtx[, synt_cells_nm[[x]], drop=FALSE], 2, function(y) RelativeChange(orig_mtx[, x, drop=FALSE], y)), na.rm=TRUE))
     denom <- y <- replicate(lents[x], orig_mtx[, x])
     denom[denom == 0] <- 1
     mean(rowMeans((syn_mtx[, synt_cells_nm[[x]], drop=FALSE] - y) / denom))
@@ -502,30 +476,3 @@ DevScGFT <- function(object) {
   # ===================================
 }
 
-
-# Function to safely calculate relative changes to avoid division by zero
-RelativeChange <- function(a, b) {
-  change <- (b - a) / ifelse(a == 0, 1, a)
-  return(change)
-}
-
-# Function to safely calculate relative changes to avoid division by zero
-revRelativeChange <- function(a, b) {
-  return(a+b*a)
-}
-
-
-# Calculate number of times each cell should be sampled
-sampleCells <- function(n_synt, cells) {
-  N <- length(cells)
-  if (n_synt > N) {
-    rsdl <- n_synt %% N  # Residual counts for characters
-    smpls <- rep(cells, times = floor(n_synt / N))
-    if (rsdl > 0) { # Add residual counts
-      smpls <- c(smpls, sample(cells, size=rsdl, replace=FALSE))
-    }
-  } else {
-    smpls <- sample(cells, size=n_synt, replace=FALSE)
-  }
-  return(smpls)
-}
