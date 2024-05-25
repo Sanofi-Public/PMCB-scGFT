@@ -15,7 +15,7 @@
 #' @param    groups            A character in the original \code{object} metadata used
 #'                             for group-based synthesis (such as cell types or clusters).
 #'                             All groups are uniformly scaled for desired expansion.
-#' @param    cells             Specifies cell(s) barcode to be used for cell-based
+#' @param    cells             Specifies cell's barcode(s) to be used for cell-based
 #'                             synthesis. \code{nsynth} cells will be synthesized.
 #'
 #' @return Returns a combined \code{object} of original and synthetic cells. The

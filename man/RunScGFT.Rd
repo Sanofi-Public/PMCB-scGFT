@@ -4,7 +4,7 @@
 \alias{RunScGFT}
 \title{Generates synthetic scRNA-seq data in-silico}
 \usage{
-RunScGFT(object, nsynth, ncpmnts = 1, groups, cells = NULL)
+RunScGFT(object, nsynth, ncpmnts = 1, groups = NULL, cells = NULL)
 }
 \arguments{
 \item{object}{A seurat object.}
@@ -15,12 +15,11 @@ RunScGFT(object, nsynth, ncpmnts = 1, groups, cells = NULL)
 synthesis process.}
 
 \item{groups}{A character in the original \code{object} metadata used
-for synthesis to capture distinct variation modes
-in each cell population, such as cell types or clusters.
+for group-based synthesis (such as cell types or clusters).
 All groups are uniformly scaled for desired expansion.}
 
-\item{cells}{An optional argument specifying the subset of cells
-to be used for synthesis.}
+\item{cells}{Specifies cell's barcode(s) to be used for cell-based
+synthesis. \code{nsynth} cells will be synthesized.}
 }
 \value{
 Returns a combined \code{object} of original and synthetic cells. The
