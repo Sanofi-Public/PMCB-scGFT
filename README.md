@@ -132,7 +132,7 @@ sobj_synt <- CreateSeuratObject(counts=cnts,
   FindNeighbors(., reduction="harmony", dims=1:30) %>%
   FindClusters(., random.seed=42) %>%
   # ================================
-  # synthesis 1x cells (34,200), through modification of 10 complex components.
+  # synthesis 34,200 cells (1x), through modification of 10 complex components.
   RunScGFT(., nsynth=1*dim(.)[2], ncpmnts=10, groups="seurat_clusters") %>%
   # The combined dataset of original and synthetic cells undergoes another round. 
   # Re-normalization is not needed as the new cells are synthesized from already normalized data.
@@ -232,10 +232,10 @@ sobj_exp <- CreateSeuratObject(counts=cnts,
   RunHarmony(., group.by.vars="sample") %>% # sample-specific batch correction
   FindNeighbors(., reduction="harmony", dims=1:30) %>%
   # ================================
-  # synthesis 1,000, through modification of 10 complex components, for each of given annotated rare epithelial subtypes
+  # synthesis 1,000 cells, through modification of 10 complex components, for each of given annotated rare epithelial subtypes
   RunScGFT(., nsynth=1000, ncpmnts=10, cells = "S2_ACGGAGAGTTCCCGAG-1") %>% # a pre-annotated "Ionocyte" cell
-  RunScGFT(., nsynth=1000, ncpmnts=10, cells = "S1_ATTACTCTCGTTGCCT-1") %>% # a pre-annotated "Pnec" cell
-  RunScGFT(., nsynth=1000, ncpmnts=10, cells = "S1_AAGCCGCGTGCCTGCA-1") %>% # a pre-annotated "Aberrant_basaloid" cell
+  RunScGFT(., nsynth=1000, ncpmnts=10, cells = "S1_ATTACTCTCGTTGCCT-1") %>% # a pre-annotated "PNEC" cell
+  RunScGFT(., nsynth=1000, ncpmnts=10, cells = "S1_AAGCCGCGTGCCTGCA-1") %>% # a pre-annotated "Aberrant basaloid" cell
   # ================================
   FindVariableFeatures(., nfeatures=2000) %>%
   ScaleData(.) %>%
