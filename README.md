@@ -210,8 +210,10 @@ real cells onto the embedded manifold:
 <img style="width: 85%; height: auto;" src="inst/doc/panel_2_demo.png">
 </p>
 
-Depending on the operating system used for calculations, the
-results can be different from the projected ones.
+Depending on the operating system used for calculations and due to the
+stochastic nature of a generative model, the results can differ from the
+projected ones.
+
 
 #### Perform cell-based synthesis:
 
@@ -277,8 +279,9 @@ real cells onto the embedded manifold:
 <img style="width: 65%; height: auto;" src="inst/doc/panel_3_demo.png">
 </p>
 
-Depending on the operating system used for calculations, the
-results can be different from the projected ones.
+Depending on the operating system used for calculations and due to the
+stochastic nature of a generative model, the results can differ from the
+projected ones.
 
 
 </details>
