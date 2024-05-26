@@ -253,7 +253,7 @@ Next, we evaluate the consistency of cell types in synthesized cells relative to
 the originals. Cells goes through another round of cell type annotation using
 [Sargent](https://github.com/Sanofi-Public/PMCB-Sargent), an automated, 
 cluster-free, score-based annotation method that classifies cell types based on
-distinct [markers](inst/doc/epithelial_subtypes_markers.xlsx) 
+distinct [markers](inst/doc/genesets.xlsx) 
 (a helper script can be found [here](inst/doc/sargent_helper.R)). 
 Then, the annotations of the synthesized cells are evaluated by:
 
