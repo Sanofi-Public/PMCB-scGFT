@@ -173,9 +173,9 @@ synthesizing 34,200 cells...
 34,057 cells synthesized...
 34,150 cells synthesized...
 34,200 cells synthesized...
-Synthesis completed in: 5.07 min
+Synthesis completed in: 2.04 min
 Integrating data (1/2)
-  [==================================================] 100% in 42s
+  [==================================================] 100% in 37s
 Integrating data (2/2)
   [==================================================] 100% in  2m
 A Seurat object with 68,400 cells, including 34,200 synthesized.
@@ -192,8 +192,8 @@ statsScGFT(object=sobj_synt, groups="seurat_clusters")
 
 ```{r}
 Synthesized cells: 34,200
-Matching groups: 33,585
-Accuracy (%): 98.2
+Matching groups: 32,157
+Accuracy (%): 94.1
 Calculating deviation from originals...
   [==================================================] 100% in  1m
 Deviation (%): 1.55 +/- 0.38
@@ -221,10 +221,14 @@ population:
 
 ```{r}
 set.seed(1234)
-sobj_synt <- CreateSeuratObject(counts=cnts,
+sobj_exp <- CreateSeuratObject(counts=cnts,
                                 meta.data=mtd) %>%
   NormalizeData(., normalization.method="LogNormalize", scale.factor=1e6) %>%
   FindVariableFeatures(., nfeatures=2000) %>%
+  ScaleData(.) %>%
+  RunPCA(., seed.use=42) %>%
+  RunHarmony(., group.by.vars="sample") %>% # sample-specific batch correction
+  FindNeighbors(., reduction="harmony", dims=1:30) %>%
   # ================================
   # synthesis 1,000, through modification of 10 complex components, for each of given annotated rare epithelial subtypes
   RunScGFT(., nsynth=1000, ncpmnts=10, cells = "S2_ACGGAGAGTTCCCGAG-1") %>% # a pre-annotated "Ionocyte" cell
@@ -259,11 +263,11 @@ statsScGFT(object=sobj_synt, groups="sargent_celltype")
 
 ```{r}
 Synthesized cells: 3,000
-Matching groups: 2,998
-Accuracy (%): 99.93
+Matching groups: 3,000
+Accuracy (%): 100
 Calculating deviation from originals...
   [==================================================] 100% in  2s
-Deviation (%): 0.62 +/- 0.02
+Deviation (%): 0.31 +/- 0.01
 ```
 
 Utilizing UMAP for a qualitative evaluation, we project synthesized and

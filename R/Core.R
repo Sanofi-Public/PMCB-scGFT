@@ -35,24 +35,23 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
   # =======================================
   # Check if Seurat package is installed
   if (!requireNamespace('Seurat', quietly = TRUE)) {
-    stop("Running scGFT on a Seurat object requires 'Seurat'.")
+    stop("Running scGFT requires 'Seurat'.")
   }
   if (!requireNamespace('SeuratObject', quietly = TRUE)) {
-    stop("Running scGFT on a Seurat object requires 'SeuratObject'.")
+    stop("Running scGFT requires 'SeuratObject'.")
   }
   # Check if Seurat object contains RNA assay
   if (!"RNA" %in% Seurat::Assays(object)) {
-    stop("Seurat object does not contain RNA assay.")
+    stop("Object does not contain RNA assay.")
   }
   # Check if Seurat object contains RNA assay with layers for counts and data
   if (!all(c("counts", "data") %in% SeuratObject::Layers(object, assay="RNA"))) {
     stop("Layers for counts or data does not exist. Please run Seurat::NormalizeData() first.")
   }
-    # Check if Seurat object contains variable features
-  # if (object@commands[["NormalizeData.RNA"]]$normalization.method != "LogNormalize") {
-  #   stop("Seurat object should be 'LogNormalize'. Please use `LogNormalize` for 'normalization.method'.")
-  # }
-  # scl_fctr <- object@commands[["NormalizeData.RNA"]]$scale.factor
+  # Check if NN graphs is available
+  if (!"RNA_nn" %in% Graphs(object)) {
+    stop("Object should contain 'RNA_nn' graph. Please use `Seurat::FindNeighbors()'.")
+  }
   # Check if Seurat object contains variable features
   if (is.null(Seurat::VariableFeatures(object))) {
     stop("Seurat object does not contain variable features. Please run Seurat::FindVariableFeatures() first.")
@@ -79,6 +78,9 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
   suppressWarnings({
     orig_dta <- as.matrix(Seurat::GetAssayData(object, assay="RNA", layer="data"))
     })
+  suppressWarnings({
+    adj_mtx <- as.matrix(attr(object, which="graphs")[["RNA_nn"]])
+  })
   # =======================================
   genes <- rownames(object)
   varftrs <- Seurat::VariableFeatures(object)
@@ -87,17 +89,15 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
   if (!is.null(cells)) {
     var_mtx <- orig_dta[varftrs, cells, drop=FALSE]
     invar_mtx <- orig_dta[invarftrs, cells, drop=FALSE]
-    grps <- rep(1, length(cells))
+    groups <- rep(1, length(cells))
   } else {
     var_mtx <- orig_dta[varftrs, ]
     invar_mtx <- orig_dta[invarftrs, ]
-    grps <- as.character(object@meta.data[[groups]])
+    groups <- as.character(object@meta.data[[groups]])
   }
   # =======================================
-  adj_mtx <- attr(object, which="graphs")[["RNA_nn"]]
-  # =======================================
   start_time <- Sys.time()
-  syn_mtx <- PerformDIFT(cnt_mtx=var_mtx, groups=grps, nsynth=nsynth, ncpmnts=ncpmnts, adj_mtx=adj_mtx)
+  syn_mtx <- PerformDIFT(var_mtx=var_mtx, groups=groups, nsynth=nsynth, ncpmnts=ncpmnts, adj_mtx=adj_mtx)
   end_time <- Sys.time()
   dt <- as.numeric(difftime(end_time, start_time, units = "secs"))
   message(paste("Synthesis completed in:", round(dt/60, 2), "min"))
@@ -115,7 +115,9 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
                           mtd_ls = list(object@meta.data, metadata_synt))
   sobj_synt@assays$RNA$data <- sobj_synt@assays$RNA$counts
   sobj_synt@assays$RNA$counts <- GetCountMatrix(sobj_synt, orig_cnt, orig_dta, synt_cells_nm, syn_mtx_full)
+    # ===================================
   Seurat::VariableFeatures(sobj_synt) <- varftrs
+  sobj_synt@graphs[["RNA_nn"]] <- attr(object, which="graphs")[["RNA_nn"]]
   # ===================================
   ids <- grepl("_synth", rownames(sobj_synt@meta.data))
   table(ids)
@@ -231,76 +233,103 @@ SobjMerger <- function(cnt_ls, mtd_ls) {
 
 # Sample a modification factor from a Gaussian distribution
 # with mean and sd for the component across the group
-ModificationGroup <- function(ft_mtx, cmpnts, cellsInGroup) {
-  ampltds <- abs(ft_mtx[cmpnts, cellsInGroup, drop = FALSE])
-  ampltds <- apply(ampltds, 1, function(x) x/sqrt(sum(x^2)))
-  mdfs <- apply(ampltds, 2, function(x) rnorm(1, mean=2, sd=sd(x))) # the previous line flips the dimensions
-  # stopifnot(sum(is.na(mdfs)) == 0)
-  return(mdfs)
+# ModificationGroup <- function(ft_mtx, cmpnts, cells_in_grp) {
+#   ampltds <- abs(ft_mtx[cmpnts, cells_in_grp, drop = FALSE])
+#   ampltds <- apply(ampltds, 1, function(x) x/sqrt(sum(x^2)))
+#   mdfs <- apply(ampltds, 2, function(x) rnorm(1, mean=2, sd=sd(x))) # the previous line flips the dimensions
+#   # stopifnot(sum(is.na(mdfs)) == 0)
+#   return(mdfs)
+# }
+
+
+ModificationGroup <- function(cmpnts, distr_ls, grp_id) {
+  sapply(distr_ls[[grp_id]]$sds[cmpnts], function(x){
+    rnorm(1, mean=2, sd=x)
+  })
 }
 
 
 # Sample a modification factor from a Normal Gaussian distribution
 ModificationSingle <- function(cmpnts) {
-  mdfs <- rnorm(length(cmpnts), mean=2, sd=1)
-  return(mdfs)
+  rnorm(length(cmpnts), mean=2, sd=1)
+}
+
+
+# get modes of variation present in groups of cells
+modesVar <- function(sorted_grp_ids, cells_bc, groups, ft_mtx) {
+  distr_ls <- lapply(sorted_grp_ids, function(x){
+    cells_in_grp <- cells_bc[groups == x]
+    ampltds <- abs(ft_mtx[, cells_in_grp, drop=FALSE])
+    ampltds <- apply(ampltds, 1, function(x) x/sqrt(sum(x^2)))
+    list(mns = apply(ampltds, 2, mean), # the previous line flips the dimensions,
+         sds = apply(ampltds, 2, sd)) # the previous line flips the dimensions)
+  })
+  names(distr_ls) <- sorted_grp_ids
+  return(distr_ls)
 }
 
 
 # Performs Discrete and INverse Fourier Transforms
-PerformDIFT <- function(cnt_mtx, groups, nsynth, ncpmnts=1, adj_mtx) {
+PerformDIFT <- function(var_mtx, groups, nsynth, ncpmnts=1, adj_mtx) {
   # Extracting components from the input object
-  geneNames <- rownames(cnt_mtx)
-  cellNames <- colnames(cnt_mtx)
-  # originalUMICount <- colSums(cnt_mtx) # Obtain original cell's total UMI count for normalization
+  genes_nm <- rownames(var_mtx)
+  cells_bc <- colnames(var_mtx)
+  # originalUMICount <- colSums(var_mtx) # Obtain original cell's total UMI count for normalization
   # =======================================
   # Step 1: Calculate the number of cells to synthesize per group
-  groupCounts <- table(groups)
-  groupProportions <- groupCounts / sum(groupCounts)
-  nPerGroup <- round(nsynth * groupProportions)
+  groups_cnt <- table(groups)
+  nper_grp <- round(nsynth*groups_cnt/sum(groups_cnt))
   # =======================================
-  excess_cells <- sum(nPerGroup) - nsynth
+  excess_cells <- sum(nper_grp) - nsynth
   # Adjust the group with the maximum number of cells if there's an excess
   if (excess_cells > 0) {
-    max_group <- which.max(nPerGroup)
-    nPerGroup[max_group] <- nPerGroup[max_group] - excess_cells
+    max_group <- which.max(nper_grp)
+    nper_grp[max_group] <- nper_grp[max_group] - excess_cells
   }
-  # Similarly, you can adjust for a deficit in the total (if sum(nPerGroup) < nsynth)
+  # Similarly, you can adjust for a deficit in the total (if sum(nper_grp) < nsynth)
   # by adding missing cells to the group with the least cells
-  missing_cells <- nsynth - sum(nPerGroup)
+  missing_cells <- nsynth - sum(nper_grp)
   if (missing_cells > 0) {
-    min_group <- which.min(nPerGroup)
-    nPerGroup[min_group] <- nPerGroup[min_group] + missing_cells
+    min_group <- which.min(nper_grp)
+    nper_grp[min_group] <- nper_grp[min_group] + missing_cells
   }
   # =======================================
   # geneMatrix: Matrix with gene names as rows and cell barcodes as columns
   # groups: Vector containing groups IDs for each cell
   # Step 1: Apply Fourier Transform to each cell
   message(paste("Discrete fourier transform..."))
-  ft_mtx <- apply(cnt_mtx, 2, function(cell) fft(cell))
-  rownames(ft_mtx) <- paste0("cmpnt_",1:nrow(cnt_mtx))
+  ft_mtx <- apply(var_mtx, 2, function(cell) fft(cell))
+  rownames(ft_mtx) <- paste0("cmpnt_",1:nrow(var_mtx))
   len_ft <- nrow(ft_mtx)
   # =======================================
+  sorted_grp_ids <- as.character(names(sort(nper_grp, decreasing=T)))
+  # =======================================
+  # get modes of variation present in groups of cells
+  if (dim(ft_mtx)[2] > 1) {
+    distr_ls <- modesVar(sorted_grp_ids, cells_bc, groups, ft_mtx)
+  }
+  # =======================================
   message(paste("Inverse fourier transform..."))
-  message(paste("synthesizing", format(sum(nPerGroup), big.mark=","), "cells..."))
+  message(paste("synthesizing", format(sum(nper_grp), big.mark=","), "cells..."))
+  # =======================================
   # Step 2: Generate synthetic cells for each group
   # set.seed(12345)
-  synthMatrix_ls <- list()
+  synt_mtx_ls <- list()
   cell_cnt <- 0
-  for (groupID in names(sort(nPerGroup, decreasing=T))) {
+  for (grp_id in sorted_grp_ids) {
     # get cells in the group
-    cellsInGroup <- cellNames[groups == groupID]
+    cells_in_grp <- cells_bc[groups == grp_id]
     # decide modification function
-    if (length(cellsInGroup) > 1) {
-      ModificationFunc <- function(cmpnts) ModificationGroup(ft_mtx, cmpnts, cellsInGroup)
+    if (length(cells_in_grp) > 1) {
+      ModificationFunc <- function(cmpnts) ModificationGroup(cmpnts, distr_ls, grp_id)
     } else {
       ModificationFunc <- function(cmpnts) ModificationSingle(cmpnts)
     }
     # Randomly select a cell from the group
-    n_synt <- nPerGroup[names(nPerGroup) == groupID]
-    # selectedCells <- sampleCells(n_synt, cells=cellsInGroup)
-    selectedCells <- sample(cellsInGroup, n_synt, replace=TRUE)
-    synthMatrix <- lapply(selectedCells, function(x){
+    n_synt <- nper_grp[names(nper_grp) == grp_id]
+    # cells_smpld <- sampleCells(n_synt, cells=cells_in_grp)
+    cells_smpld <- sample(cells_in_grp, n_synt, replace=TRUE)
+    synthMatrix <- lapply(cells_smpld, function(x){
       # get the selected cell FT
       modifiedFT <- ft_mtx[, x]
       # Randomly select a component to modify
@@ -317,24 +346,20 @@ PerformDIFT <- function(cnt_mtx, groups, nsynth, ncpmnts=1, adj_mtx) {
       syn_cell <- Re(fft(modifiedFT, inverse=TRUE) / len_ft)
       # Find the indices of the neighbors. Combine the synthesized cell, its original
       # counterpart, and its neighbors. Calculate the average expression per gene.
-      nibrs <- intersect(names(which(adj_mtx[x, ] > 0)), cellsInGroup)
-      syn_cell <- rowMeans(cbind(syn_cell, cnt_mtx[, nibrs, drop=FALSE]))
-      # syn_cell <- rowMeans(cbind(syn_cell, cnt_mtx[, x]))
-      # syn_cell <- syn_cell * (originalUMICount[x] / sum(syn_cell)) # Scale UMI counts
-      return(syn_cell)
+      rowMeans(cbind(syn_cell, var_mtx[, intersect(names(which(adj_mtx[x, ] > 0)), cells_in_grp), drop=FALSE]))
     })
-    names(synthMatrix) <- selectedCells
-    synthMatrix_ls <- c(synthMatrix_ls, synthMatrix)
+    names(synthMatrix) <- cells_smpld
+    synt_mtx_ls <- c(synt_mtx_ls, synthMatrix)
     cell_cnt <- cell_cnt + length(synthMatrix)
     message(paste(format(cell_cnt, big.mark=","), "cells synthesized..."))
   }
-  stopifnot(length(synthMatrix_ls) == nsynth)
-  stopifnot(unique(lengths(synthMatrix_ls)) == length(geneNames))
-  synthMatrix <- convert_list_to_matrix(synthMatrix_ls)
-  rownames(synthMatrix) <- geneNames
-  synthMatrix[synthMatrix < 1e-6] <- 0 # Apply ReLU
-  # synthMatrix <- round(synthMatrix, 3)
-  syn_mtx <- as(synthMatrix, "dgCMatrix")
+  stopifnot(length(synt_mtx_ls) == nsynth)
+  stopifnot(unique(lengths(synt_mtx_ls)) == length(genes_nm))
+  syn_mtx <- convert_list_to_matrix(synt_mtx_ls)
+  rownames(syn_mtx) <- genes_nm
+  syn_mtx[syn_mtx < 1e-6] <- 0 # Apply ReLU
+  # syn_mtx <- round(syn_mtx, 3)
+  # syn_mtx <- as(syn_mtx, "dgCMatrix")
   # =======================================
   return(syn_mtx)
 }
@@ -383,7 +408,7 @@ ExtendSynthesizedMatrix <- function(syn_mtx, genes, invar_mtx, invarftrs, synt_c
   # Assign synthesized variable genes data
   indcs <- match(rownames(syn_mtx), rownames(data_full))
   suppressWarnings({
-    data_full[indcs, ] <- as.matrix(syn_mtx)
+    data_full[indcs, ] <- syn_mtx
   })
   # ===================================
   # Initialize progress bar
