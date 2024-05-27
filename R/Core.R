@@ -142,7 +142,7 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
 #' @param    object   A Seurat object that includes synthesized cells, i.e., an object post \link{RunScGFT}.
 #' @param    groups   Same character in the original \code{object} metadata used for synthesis by \link{RunScGFT}.
 #'
-#' @return   synthesis accuracy in percentage.
+#' @return   synthesis accuracy and deviation from original cells in percentage.
 #'
 #' @details assesses the quality of the synthesis process by calculating the
 #'   proportion of synthesized cells that correctly grouped with their
@@ -190,13 +190,17 @@ statsScGFT <- function(object, groups) {
                      total_cells = n(),
                      accuracy_percentage = (matching_clusters / total_cells) * 100)
   # ===================================
+  acr <- round(results_stats$accuracy_percentage, 2)
   message(paste("Synthesized cells:", format(results_stats$total_cells, big.mark=",")))
   message(paste("Matching groups:", format(results_stats$matching_clusters, big.mark=",")))
-  message(paste("Accuracy (%):", round(results_stats$accuracy_percentage, 2)))
+  message(paste("Accuracy (%):", acr))
   # ===================================
   message("Calculating deviation from originals...")
-  DevScGFT(object)
+  devs <- DevScGFT(object)
+  message(paste("Deviation (%):", round(mean(devs)*100, 2), "+/-", round(sd(devs)*100, 2)))
   # ===================================
+  return(list("accuracy" = acr,
+              "deviation" = round(mean(devs)*100, 2)))
 }
 
 
@@ -497,7 +501,7 @@ DevScGFT <- function(object) {
     mean(rowMeans((syn_mtx[, synt_cells_nm[[x]], drop=FALSE] - y) / denom))
   })
   # ===================================
-  message(paste("Deviation (%):", round(mean(devs)*100, 2), "+/-", round(sd(devs)*100, 2)))
+  return(devs)
   # ===================================
 }
 

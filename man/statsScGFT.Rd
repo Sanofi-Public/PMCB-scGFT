@@ -12,7 +12,7 @@ statsScGFT(object, groups)
 \item{groups}{Same character in the original \code{object} metadata used for synthesis by \link{RunScGFT}.}
 }
 \value{
-synthesis accuracy in percentage.
+synthesis accuracy and deviation from original cells in percentage.
 }
 \description{
 Calculates the likelihood that synthesized cells will have the
