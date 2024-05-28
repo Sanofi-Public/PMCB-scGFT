@@ -15,8 +15,12 @@
 #' @param    groups            A character in the original \code{object} metadata used
 #'                             for group-based synthesis (such as cell types or clusters).
 #'                             All groups are uniformly scaled for desired expansion.
-#' @param    cells             Specifies cell's barcode(s) to be used for cell-based
-#'                             synthesis. \code{nsynth} cells will be synthesized.
+#' @param    cells             Specifies the barcode(s) of the cell(s) to be
+#'                             used for cell-based synthesis. If a \code{list} of
+#'                             barcodes is provided, \code{nsynth} cells will be
+#'                             synthesized for each barcode in the list. If a
+#'                             \code{vector} of barcodes is provided, \code{nsynth}
+#'                             cells will be synthesized for the specified group of barcodes.
 #'
 #' @return Returns a combined \code{object} of original and synthetic cells. The
 #'   synthesized cells are integrated into the \code{data} layer, while their
@@ -209,12 +213,11 @@ statsScGFT <- function(object, groups) {
   message(paste("Matching groups:", format(results_stats$matching_clusters, big.mark=",")))
   message(paste("Accuracy (%):", acr))
   # ===================================
-  message("Calculating deviation from originals...")
-  devs <- DevScGFT(object)
-  message(paste("Deviation (%):", round(mean(devs)*100, 2), "+/-", round(sd(devs)*100, 2)))
+  # message("Calculating deviation from originals...")
+  # devs <- DevScGFT(object)
+  # message(paste("Deviation (%):", round(mean(devs)*100, 2), "+/-", round(sd(devs)*100, 2)))
   # ===================================
-  return(list("accuracy" = acr,
-              "deviation" = round(mean(devs)*100, 2)))
+  return(list("accuracy" = acr))
 }
 
 
@@ -275,8 +278,8 @@ ModificationSingle <- function(cmpnts) {
 
 # get modes of variation present in groups of cells
 modesVar <- function(sorted_grp_ids, cells_bc, groups, ft_mtx) {
-  distr_ls <- lapply(sorted_grp_ids, function(x){
-    cells_in_grp <- cells_bc[groups == x]
+  distr_ls <- lapply(sorted_grp_ids, function(grp_id){
+    cells_in_grp <- cells_bc[groups == grp_id]
     ampltds <- abs(ft_mtx[, cells_in_grp, drop=FALSE])
     ampltds <- apply(ampltds, 1, function(x) x/sqrt(sum(x^2)))
     list(mns = apply(ampltds, 2, mean), # the previous line flips the dimensions,
@@ -332,7 +335,8 @@ PerformDIFT <- function(var_mtx, groups, nsynth, ncpmnts=1, adj_mtx) {
   # =======================================
   # Step 2: Generate synthetic cells for each group
   # set.seed(12345)
-  synt_mtx_ls <- list()
+  synt_ls <- list()
+  devs_c <- c()
   cell_cnt <- 0
   for (grp_id in sorted_grp_ids) {
     # get cells in the group
@@ -347,7 +351,7 @@ PerformDIFT <- function(var_mtx, groups, nsynth, ncpmnts=1, adj_mtx) {
     n_synt <- nper_grp[names(nper_grp) == grp_id]
     # cells_smpld <- sampleCells(n_synt, cells=cells_in_grp)
     cells_smpld <- sample(cells_in_grp, n_synt, replace=TRUE)
-    synthMatrix <- lapply(cells_smpld, function(x){
+    synt_res <- lapply(cells_smpld, function(x){
       # get the selected cell FT
       modifiedFT <- ft_mtx[, x]
       # Randomly select a component to modify
@@ -362,22 +366,38 @@ PerformDIFT <- function(var_mtx, groups, nsynth, ncpmnts=1, adj_mtx) {
       modifiedFT[conjugateComps] <- modifiedFT[conjugateComps] * modFactors[boolid]
       # Perform IFT to synthesize a new cell
       syn_cell <- Re(fft(modifiedFT, inverse=TRUE) / len_ft)
+      # calculate deviations
+      denom <- var_mtx[, x]
+      denom[denom == 0] <- 1
+      devs <- mean((pmax(0, syn_cell) - var_mtx[, x])/denom)
       # Find the indices of the neighbors. Combine the synthesized cell, its original
       # counterpart, and its neighbors. Calculate the average expression per gene.
-      rowMeans(cbind(syn_cell, var_mtx[, intersect(names(which(adj_mtx[x, ] > 0)), cells_in_grp), drop=FALSE]))
+      # rowMeans(cbind(syn_cell, var_mtx[, intersect(names(which(adj_mtx[x, ] > 0)), cells_in_grp), drop=FALSE]))
+      syn_cell <- rowMeans(cbind(syn_cell, var_mtx[, names(which(adj_mtx[x, cells_in_grp] > 0)), drop=FALSE]))
+      # return
+      list("synt" = syn_cell,
+           "devs" = devs)
     })
-    names(synthMatrix) <- cells_smpld
-    synt_mtx_ls <- c(synt_mtx_ls, synthMatrix)
-    cell_cnt <- cell_cnt + length(synthMatrix)
+    # =======================================
+    # extract cells
+    synt <- lapply(synt_res, function(x) x$synt)
+    names(synt) <- cells_smpld
+    synt_ls <- c(synt_ls, synt)
+    # =======================================
+    # extract devs
+    devs <- sapply(synt_res, function(x) x$devs)
+    devs_c <- c(devs_c, devs)
+    # =======================================
+    cell_cnt <- cell_cnt + length(synt)
     message(paste(format(cell_cnt, big.mark=","), "cells synthesized..."))
   }
-  stopifnot(length(synt_mtx_ls) == nsynth)
-  stopifnot(unique(lengths(synt_mtx_ls)) == length(genes_nm))
-  syn_mtx <- convert_list_to_matrix(synt_mtx_ls)
+  stopifnot(length(synt_ls) == nsynth)
+  stopifnot(unique(lengths(synt_ls)) == length(genes_nm))
+  syn_mtx <- convert_list_to_matrix(synt_ls)
   rownames(syn_mtx) <- genes_nm
   syn_mtx[syn_mtx < 1e-6] <- 0 # Apply ReLU
-  # syn_mtx <- round(syn_mtx, 3)
-  # syn_mtx <- as(syn_mtx, "dgCMatrix")
+  # =======================================
+  message(paste("Deviation from originals (%):", round(mean(devs_c)*100, 2), "+/-", round(sd(devs_c)*100, 2)))
   # =======================================
   return(syn_mtx)
 }
