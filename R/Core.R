@@ -86,18 +86,34 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
   varftrs <- Seurat::VariableFeatures(object)
   invarftrs <- setdiff(genes, varftrs)
   # =======================================
+  start_time <- Sys.time()
+  # =======================================
   if (!is.null(cells)) {
-    var_mtx <- orig_dta[varftrs, cells, drop=FALSE]
-    invar_mtx <- orig_dta[invarftrs, cells, drop=FALSE]
-    groups <- rep(1, length(cells))
-  } else {
+    if (is.atomic(cells)) {
+      var_mtx <- orig_dta[varftrs, cells, drop=FALSE]
+      invar_mtx <- orig_dta[invarftrs, cells, drop=FALSE]
+      groups <- rep(1, length(cells))
+      syn_mtx <- PerformDIFT(var_mtx=var_mtx, groups=groups, nsynth=nsynth, ncpmnts=ncpmnts, adj_mtx=adj_mtx)
+    } else if (is.list(cells)) {
+      syn_mtx <- lapply(cells, function(x) {
+        var_mtx <- orig_dta[varftrs, x, drop=FALSE]
+        groups <- rep(1, length(x))
+        PerformDIFT(var_mtx=var_mtx, groups=groups, nsynth=nsynth, ncpmnts=ncpmnts, adj_mtx=adj_mtx)
+      })
+      syn_mtx <- do.call(cbind, syn_mtx)
+      invar_mtx <- orig_dta[invarftrs, unlist(cells), drop=FALSE]
+    } else {
+      stop()
+    }
+  } else if (!is.null(groups)){
     var_mtx <- orig_dta[varftrs, ]
     invar_mtx <- orig_dta[invarftrs, ]
     groups <- as.character(object@meta.data[[groups]])
+    syn_mtx <- PerformDIFT(var_mtx=var_mtx, groups=groups, nsynth=nsynth, ncpmnts=ncpmnts, adj_mtx=adj_mtx)
+  } else {
+    stop()
   }
   # =======================================
-  start_time <- Sys.time()
-  syn_mtx <- PerformDIFT(var_mtx=var_mtx, groups=groups, nsynth=nsynth, ncpmnts=ncpmnts, adj_mtx=adj_mtx)
   end_time <- Sys.time()
   dt <- as.numeric(difftime(end_time, start_time, units = "secs"))
   message(paste("Synthesis completed in:", round(dt/60, 2), "min"))
@@ -115,12 +131,10 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
                           mtd_ls = list(object@meta.data, metadata_synt))
   sobj_synt@assays$RNA$data <- sobj_synt@assays$RNA$counts
   sobj_synt@assays$RNA$counts <- GetCountMatrix(sobj_synt, orig_cnt, orig_dta, synt_cells_nm, syn_mtx_full)
-    # ===================================
+  # ===================================
   Seurat::VariableFeatures(sobj_synt) <- varftrs
-  sobj_synt@graphs[["RNA_nn"]] <- attr(object, which="graphs")[["RNA_nn"]]
   # ===================================
   ids <- grepl("_synth", rownames(sobj_synt@meta.data))
-  table(ids)
   sobj_synt@meta.data$synthesized <- "no"
   sobj_synt@meta.data$synthesized[ids] <- "yes"
   # ===================================
