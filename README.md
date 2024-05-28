@@ -71,8 +71,10 @@ RunScGFT(object, nsynth, ncpmnts = 1, groups = NULL, cells = NULL)
 
 `RunScGFT` requires, at a minimum, a Seurat object (`object`), the number of
 desired cells to be synthesized (`nsynth`), and a metadata variable indicating
-groups of cells (`groups`). Assign cell barcode(s) to `cells` for cell-specific 
-synthesis.
+groups of cells (`groups`). Assign barcode(s) to `cells` for cell-specific 
+synthesis.  If a `list` of barcodes is provided, `nsynth` cells will be synthesized
+for each barcode. If a `vector` of barcodes is provided, `nsynth` cells
+will be synthesized for the specified group of barcodes.
 
 ```r
 # to evaluate synthsized cells
@@ -230,7 +232,7 @@ sobj_exp <- CreateSeuratObject(counts=cnts,
   RunHarmony(., group.by.vars="sample") %>% # sample-specific batch correction
   FindNeighbors(., reduction="harmony", dims=1:30) %>%
   # ================================
-  # synthesis 1,000, through modification of 10 complex components, for each of given annotated rare epithelial subtypes
+  # synthesis 1,000 cells, through modification of 10 complex components, for each of given annotated rare epithelial subtypes
   RunScGFT(., nsynth=1000, ncpmnts=10, cells = list("S2_ACGGAGAGTTCCCGAG-1", # a pre-annotated "Ionocyte" cell
                                                     "S1_ATTACTCTCGTTGCCT-1", # a pre-annotated "Ionocyte" cell
                                                     "S1_AAGCCGCGTGCCTGCA-1") # a pre-annotated "Aberrant_basaloid" cell
