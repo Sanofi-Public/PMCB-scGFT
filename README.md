@@ -195,7 +195,7 @@ statsScGFT(object=sobj_synt, groups="seurat_clusters")
 
 ```{r}
 Synthesized cells: 34,200
-Matching groups: 32,157
+Matching cells: 32,157
 Accuracy (%): 94.03
 ```
 
@@ -267,7 +267,7 @@ statsScGFT(object=sobj_synt, groups="sargent_celltype")
 
 ```{r}
 Synthesized cells: 3,000
-Matching groups: 2,998
+Matching cells: 2,998
 Accuracy (%): 99.93
 ```
 

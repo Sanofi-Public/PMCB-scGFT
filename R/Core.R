@@ -210,7 +210,7 @@ statsScGFT <- function(object, groups) {
   # ===================================
   acr <- round(results_stats$accuracy_percentage, 2)
   message(paste("Synthesized cells:", format(results_stats$total_cells, big.mark=",")))
-  message(paste("Matching groups:", format(results_stats$matching_clusters, big.mark=",")))
+  message(paste("Matching cells:", format(results_stats$matching_clusters, big.mark=",")))
   message(paste("Accuracy (%):", acr))
   # ===================================
   # message("Calculating deviation from originals...")
