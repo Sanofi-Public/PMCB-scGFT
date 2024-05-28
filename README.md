@@ -219,7 +219,8 @@ projected ones.
 
 In this showcase, we expand rare epithelial subtypes, including aberrant
 basaloid cells, PNECs, and ionocytes, each comprising less than 0.3% of the
-population:
+population. An individual cell from each cell type was randomly selected for 
+synthesis:
 
 ```{r}
 set.seed(1234)
