@@ -15,11 +15,10 @@
 #' @param    groups            A character in the original \code{object} metadata used
 #'                             for group-based synthesis (such as cell types or clusters).
 #'                             All groups are uniformly scaled for desired expansion.
-#' @param    cells             Specifies the barcode(s) of the cell(s) to be
-#'                             used for cell-based synthesis. If a \code{list} of
-#'                             barcodes is provided, \code{nsynth} cells will be
-#'                             synthesized for each barcode in the list. If a
-#'                             \code{vector} of barcodes is provided, \code{nsynth}
+#' @param    cells             A \code{list}. Specifies the barcode(s) of the cell(s) to be
+#'                             used for cell-based synthesis. for elemnts of the list with one
+#'                             cell barcode, \code{nsynth} cells will be synthesized.
+#'                             If a \code{vector} of barcodes is provided, \code{nsynth}
 #'                             cells will be synthesized for the specified group of barcodes.
 #'
 #' @return Returns a combined \code{object} of original and synthetic cells. The
@@ -53,7 +52,7 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
     stop("Layers for counts or data does not exist. Please run Seurat::NormalizeData() first.")
   }
   # Check if NN graphs is available
-  if (!"RNA_nn" %in% Graphs(object)) {
+  if (!"RNA_nn" %in% SeuratObject::Graphs(object)) {
     stop("Object should contain 'RNA_nn' graph. Please use `Seurat::FindNeighbors()'.")
   }
   # Check if Seurat object contains variable features
@@ -68,6 +67,12 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
   if (is.null(cells) & !is.null(groups)) {
     if (!groups %in% names(object@meta.data)) {
       stop(paste0("'", groups, "' does not exist in the object metadata."))
+    }
+  }
+  # check if 'cells' is a list
+  if (!is.null(cells) & is.null(groups)) {
+    if (!is.list(cells)) {
+      stop(paste0("'cells' should be a list."))
     }
   }
   # check ncpmnts and number of variable features
@@ -93,27 +98,18 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
   start_time <- Sys.time()
   # =======================================
   if (!is.null(cells)) {
-    if (is.atomic(cells)) {
-      var_mtx <- orig_dta[varftrs, cells, drop=FALSE]
-      invar_mtx <- orig_dta[invarftrs, cells, drop=FALSE]
-      groups <- rep(1, length(cells))
-      syn_mtx <- PerformDIFT(var_mtx=var_mtx, groups=groups, nsynth=nsynth, ncpmnts=ncpmnts, adj_mtx=adj_mtx)
-    } else if (is.list(cells)) {
-      syn_mtx <- lapply(cells, function(x) {
-        var_mtx <- orig_dta[varftrs, x, drop=FALSE]
-        groups <- rep(1, length(x))
-        PerformDIFT(var_mtx=var_mtx, groups=groups, nsynth=nsynth, ncpmnts=ncpmnts, adj_mtx=adj_mtx)
-      })
-      syn_mtx <- do.call(cbind, syn_mtx)
-      invar_mtx <- orig_dta[invarftrs, unlist(cells), drop=FALSE]
-    } else {
-      stop()
-    }
+    syn_mtx <- lapply(cells, function(x) {
+      var_mtx <- orig_dta[varftrs, x, drop=FALSE]
+      groups <- rep(1, length(x))
+      PerformDIFT(var_mtx=var_mtx, groups=groups, nsynth=nsynth, ncpmnts=ncpmnts, adj_mtx=adj_mtx)
+    })
+    syn_mtx <- do.call(cbind, syn_mtx)
+    invar_mtx <- orig_dta[invarftrs, unlist(cells), drop=FALSE]
   } else if (!is.null(groups)){
     var_mtx <- orig_dta[varftrs, ]
-    invar_mtx <- orig_dta[invarftrs, ]
     groups <- as.character(object@meta.data[[groups]])
     syn_mtx <- PerformDIFT(var_mtx=var_mtx, groups=groups, nsynth=nsynth, ncpmnts=ncpmnts, adj_mtx=adj_mtx)
+    invar_mtx <- orig_dta[invarftrs, ]
   } else {
     stop()
   }

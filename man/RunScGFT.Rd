@@ -18,11 +18,10 @@ synthesis process.}
 for group-based synthesis (such as cell types or clusters).
 All groups are uniformly scaled for desired expansion.}
 
-\item{cells}{Specifies the barcode(s) of the cell(s) to be
-used for cell-based synthesis. If a \code{list} of
-barcodes is provided, \code{nsynth} cells will be
-synthesized for each barcode in the list. If a
-\code{vector} of barcodes is provided, \code{nsynth}
+\item{cells}{A \code{list}. Specifies the barcode(s) of the cell(s) to be
+used for cell-based synthesis. for elemnts of the list with one
+cell barcode, \code{nsynth} cells will be synthesized.
+If a \code{vector} of barcodes is provided, \code{nsynth}
 cells will be synthesized for the specified group of barcodes.}
 }
 \value{

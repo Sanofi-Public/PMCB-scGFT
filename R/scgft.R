@@ -23,7 +23,6 @@
 #' @import      methods
 #' @importFrom  dplyr           n filter select mutate summarize rename %>%
 #' @importFrom  tibble          rownames_to_column
-#' @importFrom  Matrix          rowSums colSums Matrix
 #' @importFrom  rlang           sym syms
 #' @importFrom  stats           fft kmeans sd rnorm
 #' @importFrom  stringr         str_which
