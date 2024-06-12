@@ -235,8 +235,8 @@ sobj_exp <- CreateSeuratObject(counts=cnts,
   # ================================
   # synthesis 1,000 cells, through modification of 10 complex components, for each of given annotated rare epithelial subtypes
   RunScGFT(., nsynth=1000, ncpmnts=10, cells = list("S2_ACGGAGAGTTCCCGAG-1", # a pre-annotated "Ionocyte" cell
-                                                    "S1_ATTACTCTCGTTGCCT-1", # a pre-annotated "Ionocyte" cell
-                                                    "S1_AAGCCGCGTGCCTGCA-1") # a pre-annotated "Aberrant_basaloid" cell
+                                                    "S1_ATTACTCTCGTTGCCT-1", # a pre-annotated "PNEC" cell
+                                                    "S1_AAGCCGCGTGCCTGCA-1") # a pre-annotated "Aberrant basaloid" cell
                                                     ) %>% 
   # ================================
   FindVariableFeatures(., nfeatures=2000) %>%
