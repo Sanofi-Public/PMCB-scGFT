@@ -76,6 +76,12 @@ synthesis.  If a `list` of barcodes is provided, `nsynth` cells will be synthesi
 for each barcode. If a `vector` of barcodes is provided, `nsynth` cells
 will be synthesized for the specified group of barcodes.
 
+Specifies the barcode(s) of the cell(s) to be used for cell-based synthesis. for
+elemnts of the list with one cell barcode, `nsynth` cells will be synthesized.
+If a `vector` of barcodes is provided, `nsynth` cells will be synthesized for
+the specified group of barcodes.
+
+
 ```r
 # to evaluate synthsized cells
 statsScGFT(object, groups)
