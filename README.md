@@ -71,16 +71,11 @@ RunScGFT(object, nsynth, ncpmnts = 1, groups = NULL, cells = NULL)
 
 `RunScGFT` requires, at a minimum, a Seurat object (`object`), the number of
 desired cells to be synthesized (`nsynth`), and a metadata variable indicating
-groups of cells (`groups`). Assign barcode(s) to `cells` for cell-specific 
-synthesis.  If a `list` of barcodes is provided, `nsynth` cells will be synthesized
-for each barcode. If a `vector` of barcodes is provided, `nsynth` cells
-will be synthesized for the specified group of barcodes.
-
-Specifies the barcode(s) of the cell(s) to be used for cell-based synthesis. for
-elemnts of the list with one cell barcode, `nsynth` cells will be synthesized.
-If a `vector` of barcodes is provided, `nsynth` cells will be synthesized for
-the specified group of barcodes.
-
+groups of cells (`groups`), or `cells` for cell-specific synthesis. `cells` 
+specifies the list of barcode(s) of the cell(s) to be used for cell-based synthesis. 
+For elemnts of the list with one cell barcode, `nsynth` cells will be synthesized. 
+If a `vector` of barcodes is provided, `nsynth` cells will be synthesized for the 
+specified group of barcodes.
 
 ```r
 # to evaluate synthsized cells
