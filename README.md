@@ -83,11 +83,10 @@ statsScGFT(object, groups)
 ```
 
 `statsScGFT` requires a Seurat object that includes synthesized cells (`object`)
-and the same character variable from the original object metadata used for
-synthesis (`groups`). It calculates the likelihood that synthesized cells will
-have the same identity (belong to same `groups`) as their original counterparts.
-It also reports the relative deviation of synthesized gene expression profiles from
-original cells.
+and a character variable from the original object metadata (`groups`). 
+It calculates the likelihood that synthesized cells will have the same identity 
+as their original counterparts. It also reports the relative deviation of 
+synthesized gene expression profiles from original cells.
 
 </details>
 
