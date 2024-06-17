@@ -1,4 +1,4 @@
-# Genix package documentation and import directives
+# scgft package documentation and import directives
 
 #' The scgft package
 #'
