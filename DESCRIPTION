@@ -14,10 +14,8 @@ License: file LICENSE
 Copyrights: file COPYRIGHTS
 URL: https://github.com/Sanofi-Public/PMCB-scgft
 BugReports: https://github.com/Sanofi-Public/PMCB-scgft/issues
-BuildVignettes: true
-VignetteBuilder: knitr
-Suggests: knitr, rmarkdown, testthat (>= 3.0.0), BiocStyle,
-        Seurat (>= 4.1.1), SeuratObject
+BuildVignettes: false
+Suggests: Seurat (>= 4.1.1), SeuratObject
 Encoding: UTF-8
 biocViews: SingleCellSynthesis
 Depends: R (>= 4.2.0)
