@@ -26,7 +26,7 @@ reflect the natural biological variability found in authentic datasets.
 if (!require("devtools", quietly = TRUE))
   install.packages("devtools")
 
-devtools::install_github("Sanofi-GitHub/PMCB-scGFT", 
+devtools::install_github("Sanofi-Public/PMCB-scGFT", 
                          build_vignettes=FALSE)
 ```
 
