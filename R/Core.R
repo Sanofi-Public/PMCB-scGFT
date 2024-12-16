@@ -20,6 +20,9 @@
 #'                             cell barcode, \code{nsynth} cells will be synthesized.
 #'                             If a \code{vector} of barcodes is provided, \code{nsynth}
 #'                             cells will be synthesized for the specified group of barcodes.
+#' @param    random_seed       If TRUE, a time-based seed is used (\code{Sys.time()}), introducing
+#'                             randomness in the synthesis process each time the function is called.
+#'                             Default is FALSE.
 #'
 #' @return Returns a combined \code{object} of original and synthetic cells. The
 #'   synthesized cells are integrated into the \code{data} layer, while their
@@ -34,7 +37,7 @@
 #'
 #' @export
 RunScGFT <- function(object, nsynth, ncpmnts=1,
-                     groups=NULL, cells=NULL) {
+                     groups=NULL, cells=NULL, random_seed=FALSE) {
   # =======================================
   # Check if Seurat package is installed
   if (!requireNamespace('Seurat', quietly = TRUE)) {
@@ -101,14 +104,14 @@ RunScGFT <- function(object, nsynth, ncpmnts=1,
     syn_mtx <- lapply(cells, function(x) {
       var_mtx <- orig_dta[varftrs, x, drop=FALSE]
       groups <- rep(1, length(x))
-      PerformDIFT(var_mtx=var_mtx, groups=groups, nsynth=nsynth, ncpmnts=ncpmnts, adj_mtx=adj_mtx)
+      PerformDIFT(var_mtx=var_mtx, groups=groups, nsynth=nsynth, ncpmnts=ncpmnts, adj_mtx=adj_mtx, random_seed=random_seed)
     })
     syn_mtx <- do.call(cbind, syn_mtx)
     invar_mtx <- orig_dta[invarftrs, unlist(cells), drop=FALSE]
   } else if (!is.null(groups)){
     var_mtx <- orig_dta[varftrs, ]
     groups <- as.character(object@meta.data[[groups]])
-    syn_mtx <- PerformDIFT(var_mtx=var_mtx, groups=groups, nsynth=nsynth, ncpmnts=ncpmnts, adj_mtx=adj_mtx)
+    syn_mtx <- PerformDIFT(var_mtx=var_mtx, groups=groups, nsynth=nsynth, ncpmnts=ncpmnts, adj_mtx=adj_mtx, random_seed=random_seed)
     invar_mtx <- orig_dta[invarftrs, ]
   } else {
     stop()
@@ -209,10 +212,6 @@ statsScGFT <- function(object, groups) {
   message(paste("Matching cells:", format(results_stats$matching_clusters, big.mark=",")))
   message(paste("Accuracy (%):", acr))
   # ===================================
-  # message("Calculating deviation from originals...")
-  # devs <- DevScGFT(object)
-  # message(paste("Deviation (%):", round(mean(devs)*100, 2), "+/-", round(sd(devs)*100, 2)))
-  # ===================================
   return(list("accuracy" = acr))
 }
 
@@ -286,8 +285,18 @@ modesVar <- function(sorted_grp_ids, cells_bc, groups, ft_mtx) {
 }
 
 
+# Relative Percent Difference (RPD)
+devs_f <- function(x1, x2) {
+  # z <- abs(x1-x2)/(abs(x1) + abs(x2))
+  # mean(ifelse(is.na(z), 0, z))
+  mean(abs(x2-x1))
+}
+
+
 # Performs Discrete and INverse Fourier Transforms
-PerformDIFT <- function(var_mtx, groups, nsynth, ncpmnts=1, adj_mtx) {
+PerformDIFT <- function(var_mtx, groups, nsynth, ncpmnts=1, adj_mtx, random_seed=FALSE) {
+
+  if (random_seed) { set.seed(Sys.time()) }
   # Extracting components from the input object
   genes_nm <- rownames(var_mtx)
   cells_bc <- colnames(var_mtx)
@@ -330,7 +339,6 @@ PerformDIFT <- function(var_mtx, groups, nsynth, ncpmnts=1, adj_mtx) {
   message(paste("synthesizing", format(sum(nper_grp), big.mark=","), "cells..."))
   # =======================================
   # Step 2: Generate synthetic cells for each group
-  # set.seed(12345)
   synt_ls <- list()
   devs_c <- c()
   cell_cnt <- 0
@@ -363,9 +371,11 @@ PerformDIFT <- function(var_mtx, groups, nsynth, ncpmnts=1, adj_mtx) {
       # Perform IFT to synthesize a new cell
       syn_cell <- Re(fft(modifiedFT, inverse=TRUE) / len_ft)
       # calculate deviations
-      denom <- var_mtx[, x]
-      denom[denom == 0] <- 1
-      devs <- mean((pmax(0, syn_cell) - var_mtx[, x])/denom)
+      # denom <- var_mtx[, x]
+      # denom[denom == 0] <- 1
+      # devs <- mean((pmax(0, syn_cell) - var_mtx[, x])/denom)
+      # devs <- mean((pmax(0, syn_cell) - var_mtx[, x])/(var_mtx[, x] + 1))
+      devs <- devs_f(var_mtx[, x], pmax(0, syn_cell))
       # Find the indices of the neighbors. Combine the synthesized cell, its original
       # counterpart, and its neighbors. Calculate the average expression per gene.
       # rowMeans(cbind(syn_cell, var_mtx[, intersect(names(which(adj_mtx[x, ] > 0)), cells_in_grp), drop=FALSE]))
@@ -393,7 +403,7 @@ PerformDIFT <- function(var_mtx, groups, nsynth, ncpmnts=1, adj_mtx) {
   rownames(syn_mtx) <- genes_nm
   syn_mtx[syn_mtx < 1e-6] <- 0 # Apply ReLU
   # =======================================
-  message(paste("Deviation from originals (%):", round(mean(devs_c)*100, 2), "+/-", round(sd(devs_c)*100, 2)))
+  message(paste("Deviation from originals:", round(mean(devs_c), 2), "+/-", round(sd(devs_c), 2)))
   # =======================================
   return(syn_mtx)
 }
@@ -489,49 +499,5 @@ convert_list_to_matrix <- function(cell_list) {
   # Assign the unique names to the matrix columns
   colnames(mat) <- unique_cell_names
   return(mat)
-}
-
-
-
-# calculate the deviation from the originals
-DevScGFT <- function(object) {
-  # ===================================
-  suppressWarnings({
-    cells_synt <- colnames(object)[stringr::str_which(colnames(object), paste0("_synth"))]
-    syn_mtx <- as.matrix(Seurat::GetAssayData(subset(object, cells=cells_synt), assay="RNA", layer="data"))
-  })
-  # ===================================
-  suppressWarnings({
-    cells_orig <- setdiff(colnames(object), cells_synt)
-    orig_mtx <- as.matrix(Seurat::GetAssayData(subset(object, cells=cells_orig), assay="RNA", layer="data"))
-  })
-  # ===================================
-  # print(dim(synts))
-  # print(dim(origs))
-  # ===================================
-  # get the data
-  stopifnot(all(rownames(orig_mtx) == rownames(syn_mtx)))
-  # ===================================
-  # get the synthesized cells names
-  synt_cells_nm <- FetchSynthesizedCells(colnames(syn_mtx))
-  originalCells <- names(synt_cells_nm)
-  stopifnot(length(originalCells) == length(unique(originalCells)))
-  # ===================================
-  # Initialize progress bar
-  nl <- length(originalCells)
-  pb <- initialize_bar(totbar=nl, wdth=66)
-  lents <- lengths(synt_cells_nm)
-  # ===================================
-  # Loop through each original cell to compute mean deviation
-  devs <- sapply(originalCells, function(x){
-    pb$tick() # Update progress bar
-    # Calculate relative changes for each gene. Compute the row means of changes, ignoring NA values
-    denom <- y <- replicate(lents[x], orig_mtx[, x])
-    denom[denom == 0] <- 1
-    mean(rowMeans((syn_mtx[, synt_cells_nm[[x]], drop=FALSE] - y) / denom))
-  })
-  # ===================================
-  return(devs)
-  # ===================================
 }
 

@@ -126,7 +126,7 @@ mtd <- data_obj$metadata
 set.seed(1234)
 sobj_synt <- CreateSeuratObject(counts=cnts,
                                 meta.data=mtd) %>%
-  NormalizeData(., normalization.method="LogNormalize", scale.factor=1e6) %>%
+  NormalizeData(., normalization.method="LogNormalize", scale.factor=1e4) %>%
   FindVariableFeatures(., nfeatures=2000) %>%
   ScaleData(.) %>%
   RunPCA(., seed.use=42) %>%
@@ -175,7 +175,7 @@ synthesizing 34,200 cells...
 34,057 cells synthesized...
 34,150 cells synthesized...
 34,200 cells synthesized...
-Deviation from originals (%): 6.13 +/- 1.22
+Deviation from originals: 0.05 +/- 0.21
 Synthesis completed in: 1.91 min
 Integrating data (1/2)
   [==================================================] 100% in 36s
@@ -308,6 +308,34 @@ Depending on the operating system used for calculations and due to the
 stochastic nature of a generative model, the results can differ from the
 projected ones.
 
+
+</details>
+
+---
+
+
+## Custom Functions
+
+<details>
+<br>
+
+To facilitate the application of `scGFT` on large datasets, `RunScGFT_Helper` 
+enables users to split data into smaller, manageable groups for processing:
+
+```r
+RunScGFT_Helper <- function(object, scale_factor, ncpmnts=1, groups=NULL){
+  grps <- as.character(unique(object@meta.data[[groups]]))
+  sobj_ls <- lapply(grps, function(x) {
+    sobj_sub <- subset(object, cells = Cells(object)[object@meta.data[[groups]] == x]) %>%
+      RunScGFT(., nsynth=scale_factor*dim(.)[2], ncpmnts=ncpmnts, groups=groups) 
+  })
+  message(paste("merging", length(sobj_ls), "objects..."))
+  sobj_mrgd <- merge(sobj_ls[[1]], y=sobj_ls[-c(1)], merge.data=TRUE, merge.dr=FALSE)
+  message(paste("joining", length(sobj_ls), "layers..."))
+  sobj_mrgd <- SeuratObject::JoinLayers(sobj_mrgd, assay="RNA")
+  return(sobj_mrgd)
+}
+```
 
 </details>
 
