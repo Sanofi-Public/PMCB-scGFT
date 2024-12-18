@@ -226,7 +226,7 @@ synthesis:
 set.seed(1234)
 sobj_exp <- CreateSeuratObject(counts=cnts,
                                 meta.data=mtd) %>%
-  NormalizeData(., normalization.method="LogNormalize", scale.factor=1e6) %>%
+  NormalizeData(., normalization.method="LogNormalize", scale.factor=1e4) %>%
   FindVariableFeatures(., nfeatures=2000) %>%
   ScaleData(.) %>%
   RunPCA(., seed.use=42) %>%
